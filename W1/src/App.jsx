@@ -1,6 +1,8 @@
 import React, { Suspense, useRef, useEffect, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { useGLTF, Html, PerspectiveCamera, Grid, PositionalAudio } from '@react-three/drei';
+
+useGLTF.setDecoderPath('/draco/');
 import { gsap } from 'gsap';
 import * as THREE from 'three';
 
@@ -263,7 +265,7 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
       <Grid infiniteGrid fadeDistance={40} sectionColor="#333" cellColor="#111" />
 
       {boomboxPos && (
-        <RadioAudio position={boomboxPos} url="/music.wav" audioControlRef={audioControlRef} />
+        <RadioAudio position={boomboxPos} url="/music.mp3" audioControlRef={audioControlRef} />
       )}
 
       <mesh position={[-8.9, 6.6, -4]} rotation={[0, -105.2, 0]}>
