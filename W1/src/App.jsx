@@ -12,6 +12,12 @@ const OUTLINE_MAT = new THREE.MeshBasicMaterial({
 });
 
 const GROUP_TO_CAM = {
+  'RadioBoomBoxglb':     'OutdoorCam',
+  'Box':                 'PhoneCam',
+};
+
+// Used for hover highlighting — includes desk even though it has custom click logic
+const GROUP_TO_HIGHLIGHT_CAM = {
   'RadioStationDeskglb': 'ConsoleCam',
   'RadioBoomBoxglb':     'OutdoorCam',
   'Box':                 'PhoneCam',
@@ -19,7 +25,7 @@ const GROUP_TO_CAM = {
 
 // Cams where the group's highlight should be suppressed (already "inside" that area)
 const GROUP_SUPPRESSED_CAMS = {
-  'RadioStationDeskglb': ['ConsoleCam'],
+  'RadioStationDeskglb': ['ConsoleCam', 'ScreenCam'],
   'RadioBoomBoxglb':     ['OutdoorCam', 'BoomBoxCam'],
   'Box':                 ['PhoneCam'],
 };
@@ -230,11 +236,11 @@ const PROJECTS = [
   {
     title: 'This Website',
       tags: ['Blender', 'ThreeJS', 'HTML', 'React(Fiber and Drei)'],
-      Desc: 'The Website you are on right now. I did all the 3D modeling, music, and web development.',
-      link: 'www.HSDX.am',
+      desc: 'The Website you are on right now. I did all the 3D modeling, music, and web development.',
+      link: 'https://www.HSDX.am',
   },
 ];
-const ITCH_URL = 'hesiodic.itch.io'; // ← replace with your itch.io profile URL
+const ITCH_URL = 'https://hesiodic.itch.io'; // ← replace with your itch.io profile URL
 // ──────────────────────────────────────────────────────────────────────────────
 
 function ConsoleScreen({ transform }) {
@@ -252,8 +258,8 @@ function ConsoleScreen({ transform }) {
     <mesh position={[pos.x, pos.y, pos.z]} rotation={[euler.x, euler.y, euler.z]}>
       <Html
         transform
-        occlude
         distanceFactor={3.53}
+        position={[0, 0, 0.2]}
         style={{ pointerEvents: 'auto' }}
       >
         <div className="crt-screen" style={{
@@ -333,7 +339,7 @@ function collectMeshes(obj) {
   return meshes;
 }
 
-function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentCam, setCurrentCam, onReady, bootDone }) {
+function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentCam, setCurrentCam, onReady }) {
   const { scene: gltfScene, cameras } = useGLTF('/scene.glb');
   const { scene: r3fScene, gl } = useThree();
   const mainCamRef = useRef();
@@ -447,6 +453,15 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
         }
         return;
       }
+      // Console desk — two-stage camera zoom
+      if (obj.name === 'RadioStationDeskglb') {
+        if (currentCam === 'ConsoleCam') {
+          window.transitionToCamera('ScreenCam');
+        } else if (currentCam !== 'ScreenCam') {
+          window.transitionToCamera('ConsoleCam');
+        }
+        return;
+      }
       const cam = GROUP_TO_CAM[obj.name];
       if (cam) { window.transitionToCamera(cam); return; }
       obj = obj.parent;
@@ -458,7 +473,7 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
     clearTimeout(clearTimer.current);
     let obj = e.object;
     while (obj) {
-      const cam = GROUP_TO_CAM[obj.name];
+      const cam = GROUP_TO_HIGHLIGHT_CAM[obj.name];
       if (cam) {
         const suppressed = GROUP_SUPPRESSED_CAMS[obj.name] ?? [];
         if (suppressed.includes(currentCam)) {
@@ -505,23 +520,21 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
         <RadioAudio position={boomboxPos} url="/music.mp3" audioControlRef={audioControlRef} />
       )}
 
-      {bootDone && screenTransform && <ConsoleScreen transform={screenTransform} />}
+      {screenTransform && <ConsoleScreen transform={screenTransform} />}
 
-      {bootDone && (
-        <mesh position={[-8.9, 6.6, -4]} rotation={[0, -105.2, 0]}>
-          <Html transform occlude distanceFactor={2.5}>
-            <div className="contact-paper">
-              <h2 style={{ borderBottom: '2px solid black', margin: '0 0 10px 0' }}>SIGNAL_ID</h2>
-              <p><strong>Nathan Balducci</strong></p>
-              <p style={{ fontSize: '12px' }}>Dev Bio: Building digital artifacts.</p>
-              <form onSubmit={(e) => e.preventDefault()}>
-                <textarea placeholder="Type message..." />
-                <button className="send-btn">SEND SIGNAL</button>
-              </form>
-            </div>
-          </Html>
-        </mesh>
-      )}
+      <mesh position={[-8.9, 6.6, -4]} rotation={[0, -105.2, 0]}>
+        <Html transform occlude distanceFactor={2.5}>
+          <div className="contact-paper">
+            <h2 style={{ borderBottom: '2px solid black', margin: '0 0 10px 0' }}>SIGNAL_ID</h2>
+            <p><strong>Nathan Balducci</strong></p>
+            <p style={{ fontSize: '12px' }}>Dev Bio: Building digital artifacts.</p>
+            <form onSubmit={(e) => e.preventDefault()}>
+              <textarea placeholder="Type message..." />
+              <button className="send-btn">SEND SIGNAL</button>
+            </form>
+          </div>
+        </Html>
+      </mesh>
     </>
   );
 }
@@ -554,14 +567,23 @@ export default function App() {
 
       <div className="ui-overlay">
         <div className="status-bar">HSDX_OS // USER_LOGIN</div>
-        {camList
+        {['DefaultCam', ...camList.filter(n => n !== 'DefaultCam')]
           .filter(name => cameraLabels[name])
           .map((name) => (
             <button
               key={name}
               className="cam-button"
-              onClick={() => window.transitionToCamera(name)}
-              onMouseEnter={() => { if (Object.values(GROUP_TO_CAM).includes(name)) setHoveredCam(name); }}
+              onClick={() => {
+                if (name === 'ConsoleCam') {
+                  if (currentCam === 'ConsoleCam') window.transitionToCamera('ScreenCam');
+                  else window.transitionToCamera('ConsoleCam');
+                } else {
+                  window.transitionToCamera(name);
+                }
+              }}
+              onMouseEnter={() => {
+                if (Object.values(GROUP_TO_HIGHLIGHT_CAM).includes(name)) setHoveredCam(name);
+              }}
               onMouseLeave={() => setHoveredCam(null)}
             >
               {cameraLabels[name]}
@@ -572,7 +594,11 @@ export default function App() {
       <Canvas
         dpr={0.65}
         gl={{ antialias: false }}
-        style={{ position: 'absolute', top: 0, left: 0 }}
+        style={{
+          position: 'absolute', top: 0, left: 0,
+          opacity: bootDone ? 1 : 0,
+          transition: 'opacity 0.6s ease',
+        }}
       >
         <Suspense fallback={null}>
           <SceneContent
@@ -582,7 +608,6 @@ export default function App() {
             currentCam={currentCam}
             setCurrentCam={setCurrentCam}
             onReady={handleSceneReady}
-            bootDone={bootDone}
           />
         </Suspense>
       </Canvas>

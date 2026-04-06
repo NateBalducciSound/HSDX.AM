@@ -16,7 +16,6 @@
   position: relative;
   border-radius: 6px;
   overflow: hidden;
-  animation: crt-flicker 6s infinite;
   box-shadow:
     0 0 8px rgba(51,255,51,0.4),
     0 0 24px rgba(51,255,51,0.15),
