@@ -260,7 +260,7 @@ function ConsoleScreen({ transform }) {
         transform
         distanceFactor={3.53}
         position={[0, 0, 0.2]}
-        style={{ pointerEvents: 'auto' }}
+        style={{ pointerEvents: 'none' }}
       >
         <div className="crt-screen" style={{
           width: '320px',
@@ -268,8 +268,9 @@ function ConsoleScreen({ transform }) {
           border: '2px solid #1a4d1a',
           fontFamily: "'Courier New', monospace",
           color: '#33ff33',
-          fontSize: '11px', 
+          fontSize: '11px',
           userSelect: 'none',
+          pointerEvents: 'none',
         }}>
           {/* Header */}
           <div className="crt-text" style={{ background: '#060f06', padding: '6px 10px', borderBottom: '1px solid #1a4d1a', display: 'flex', justifyContent: 'space-between' }}>
@@ -279,7 +280,7 @@ function ConsoleScreen({ transform }) {
               target="_blank"
               rel="noreferrer"
               onClick={e => e.stopPropagation()}
-              style={{ color: '#ff5555', textDecoration: 'none', fontWeight: 'bold' }}
+              style={{ color: '#ff5555', textDecoration: 'none', fontWeight: 'bold', pointerEvents: 'auto' }}
             >
               ITCH.IO ↗
             </a>
@@ -303,14 +304,14 @@ function ConsoleScreen({ transform }) {
               target="_blank"
               rel="noreferrer"
               onClick={e => e.stopPropagation()}
-              style={{ display: 'inline-block', marginTop: '12px', color: '#33ff33', textDecoration: 'underline', fontSize: '11px' }}
+              style={{ display: 'inline-block', marginTop: '12px', color: '#33ff33', textDecoration: 'underline', fontSize: '11px', pointerEvents: 'auto' }}
             >
               VIEW PROJECT ↗
             </a>
           </div>
 
           {/* Navigation */}
-          <div style={{ borderTop: '1px solid #1a4d1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: '#060f06' }}>
+          <div style={{ borderTop: '1px solid #1a4d1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: '#060f06', pointerEvents: 'auto' }}>
             <button onClick={prev} style={arrowBtn}>◀</button>
             <span className="crt-text" style={{ color: '#33ff33', opacity: 0.5 }}>{idx + 1} / {PROJECTS.length}</span>
             <button onClick={next} style={arrowBtn}>▶</button>
@@ -389,7 +390,7 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
 
     const found = {};
     gltfScene.traverse((obj) => {
-      const cam = GROUP_TO_CAM[obj.name];
+      const cam = GROUP_TO_HIGHLIGHT_CAM[obj.name];
       if (cam) {
         found[cam] = collectMeshes(obj);
         if (obj.isMesh && !found[cam].includes(obj)) found[cam].unshift(obj);
