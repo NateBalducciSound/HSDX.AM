@@ -1,8 +1,6 @@
 import React, { Suspense, useRef, useEffect, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { useGLTF, Html, PerspectiveCamera, Grid, PositionalAudio } from '@react-three/drei';
-
-useGLTF.setDecoderPath('/draco/');
 import { gsap } from 'gsap';
 import * as THREE from 'three';
 
