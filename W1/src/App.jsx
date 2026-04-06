@@ -123,7 +123,7 @@ const BOOT_LINES = [
   'FIREWALL: active',
   '',
   '──────────────────────────────────────',
-  'USER: nathan@hsdx',
+  'USER: Admin',
   'SESSION: tty1',
   '──────────────────────────────────────',
   '',
