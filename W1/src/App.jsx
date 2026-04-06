@@ -1,4 +1,4 @@
-import React, { Suspense, useRef, useEffect, useState } from 'react';
+import React, { Suspense, useRef, useEffect, useState, useCallback } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { useGLTF, Html, PerspectiveCamera, Grid, PositionalAudio } from '@react-three/drei';
 import { gsap } from 'gsap';
@@ -95,13 +95,245 @@ function RadioAudio({ position, url, audioControlRef }) {
   );
 }
 
+const BOOT_LINES = [
+  'HSDX_OS  v0.9.1-alpha',
+  '──────────────────────────────────────',
+  'BIOS POST ... OK',
+  'CPU: HSDX-X1 @ 3.6GHz  [8 CORES DETECTED]',
+  'RAM: 16384MB DDR5 ... OK',
+  'GPU: HSDX-RENDER-UNIT ... OK',
+  '',
+  'Loading kernel ...',
+  'Mounting /sys ... OK',
+  'Mounting /dev ... OK',
+  'Mounting /proc ... OK',
+  'Starting udev ... OK',
+  '',
+  'Initialising audio subsystem ... OK',
+  'Initialising render pipeline ... OK',
+  'Loading scene shaders ... OK',
+  '',
+  'NETWORK: eth0 UP  [192.168.1.xx]',
+  'FIREWALL: active',
+  '',
+  '──────────────────────────────────────',
+  'USER: nathan@hsdx',
+  'SESSION: tty1',
+  '──────────────────────────────────────',
+  '',
+  'MOUNTING...',
+];
+
+const CHAR_SPEED = 9;    // ms per character
+const LINE_PAUSE = 45;    // ms pause after each line finishes
+
+function lineColor(text) {
+  if (text.startsWith('──'))      return '#1a8c1a';
+  if (text.startsWith('MOUNTING')) return '#ffffff';
+  if (text.startsWith('USER') || text.startsWith('SESSION')) return '#aaffaa';
+  return '#33ff33';
+}
+
+function BootScreen({ sceneReady, onDone }) {
+  const [doneLines, setDoneLines] = useState([]);   // fully typed lines
+  const [activeLine, setActiveLine] = useState(''); // line currently being typed
+  const [lineIdx, setLineIdx]       = useState(0);
+  const [charIdx, setCharIdx]       = useState(0);
+  const [fading, setFading]         = useState(false);
+
+  const bootDone = lineIdx >= BOOT_LINES.length;
+
+  // Character-by-character typewriter
+  useEffect(() => {
+    if (bootDone) return;
+    const full = BOOT_LINES[lineIdx];
+
+    if (charIdx < full.length) {
+      // Type next character
+      const t = setTimeout(() => setCharIdx(c => c + 1), CHAR_SPEED);
+      return () => clearTimeout(t);
+    } else {
+      // Line complete — pause then advance
+      const t = setTimeout(() => {
+        setDoneLines(prev => [...prev, full]);
+        setActiveLine('');
+        setCharIdx(0);
+        setLineIdx(l => l + 1);
+      }, full === '' ? 20 : LINE_PAUSE);
+      return () => clearTimeout(t);
+    }
+  }, [lineIdx, charIdx, bootDone]);
+
+  // Keep activeLine in sync with charIdx
+  useEffect(() => {
+    if (bootDone) return;
+    setActiveLine(BOOT_LINES[lineIdx]?.slice(0, charIdx) ?? '');
+  }, [charIdx, lineIdx, bootDone]);
+
+  // Fade out once text done AND scene ready, then call onDone after fade
+  useEffect(() => {
+    if (!bootDone || !sceneReady) return;
+    const fadeStart = setTimeout(() => setFading(true), 300);
+    const done      = setTimeout(() => onDone(), 300 + 650); // 300 delay + 600 fade + buffer
+    return () => { clearTimeout(fadeStart); clearTimeout(done); };
+  }, [bootDone, sceneReady, onDone]);
+
+  return (
+    <div style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1000,
+        background: '#000',
+        padding: '40px 48px',
+        boxSizing: 'border-box',
+        fontFamily: "'Courier New', monospace",
+        fontSize: '13px',
+        lineHeight: '1.7',
+        overflowY: 'auto',
+        opacity: fading ? 0 : 1,
+        transition: 'opacity 0.6s ease',
+      }}
+    >
+      {doneLines.map((line, i) => (
+        <div key={i} style={{ color: lineColor(line), fontWeight: line.startsWith('MOUNTING') ? 'bold' : 'normal' }}>
+          {line || '\u00a0'}
+        </div>
+      ))}
+      {/* Currently typing line with blinking cursor at end */}
+      {!bootDone && (
+        <div style={{ color: lineColor(BOOT_LINES[lineIdx] ?? ''), fontWeight: BOOT_LINES[lineIdx]?.startsWith('MOUNTING') ? 'bold' : 'normal' }}>
+          {activeLine}<span className="boot-cursor" />
+        </div>
+      )}
+      {/* Waiting for scene after boot text done */}
+      {bootDone && !sceneReady && (
+        <div><span className="boot-cursor" /></div>
+      )}
+    </div>
+  );
+}
+
+// ─── Edit your projects here ──────────────────────────────────────────────────
+const PROJECTS = [
+  {
+      title: 'CHEWS',
+      tags: ['UNITY', 'C#', 'ChucK'],
+    desc: 'A procedural tool using the audio programming language ChucK.',
+      link: 'https://youtu.be/P47jwyYOaNw?si=kXnKMFaZg_3png2s',
+  },
+  {
+    title: 'Latest Game Jam',
+    tags: ['Unity', 'C#'],
+      desc: 'My latest Contribution to a game jam. I was lead gameplay programmer, and did the level and game design.',
+      link: 'https://carnol16.itch.io/cowboy-cadavers',
+  },
+  {
+    title: 'This Website',
+      tags: ['Blender', 'ThreeJS', 'HTML', 'React(Fiber and Drei)'],
+      Desc: 'The Website you are on right now. I did all the 3D modeling, music, and web development.',
+      link: 'www.HSDX.am',
+  },
+];
+const ITCH_URL = 'hesiodic.itch.io'; // ← replace with your itch.io profile URL
+// ──────────────────────────────────────────────────────────────────────────────
+
+function ConsoleScreen({ transform }) {
+  const [idx, setIdx] = useState(0);
+  const project = PROJECTS[idx];
+
+  const prev = (e) => { e.stopPropagation(); setIdx(i => (i - 1 + PROJECTS.length) % PROJECTS.length); };
+  const next = (e) => { e.stopPropagation(); setIdx(i => (i + 1) % PROJECTS.length); };
+
+  // Build a rotation array from the quaternion
+  const euler = new THREE.Euler().setFromQuaternion(transform.quat);
+  const { pos } = transform;
+
+  return (
+    <mesh position={[pos.x, pos.y, pos.z]} rotation={[euler.x, euler.y, euler.z]}>
+      <Html
+        transform
+        occlude
+        distanceFactor={3.53}
+        style={{ pointerEvents: 'auto' }}
+      >
+        <div className="crt-screen" style={{
+          width: '320px',
+          background: '#020d02',
+          border: '2px solid #1a4d1a',
+          fontFamily: "'Courier New', monospace",
+          color: '#33ff33',
+          fontSize: '11px', 
+          userSelect: 'none',
+        }}>
+          {/* Header */}
+          <div className="crt-text" style={{ background: '#060f06', padding: '6px 10px', borderBottom: '1px solid #1a4d1a', display: 'flex', justifyContent: 'space-between' }}>
+            <span>HSDX_WORKS</span>
+            <a
+              href={ITCH_URL}
+              target="_blank"
+              rel="noreferrer"
+              onClick={e => e.stopPropagation()}
+              style={{ color: '#ff5555', textDecoration: 'none', fontWeight: 'bold' }}
+            >
+              ITCH.IO ↗
+            </a>
+          </div>
+
+          {/* Project display */}
+          <div style={{ padding: '14px 16px', minHeight: '120px' }}>
+            <div className="crt-text" style={{ color: '#aaffaa', fontWeight: 'bold', fontSize: '13px', marginBottom: '6px' }}>
+              {project.title}
+            </div>
+            <div style={{ marginBottom: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {project.tags.map(tag => (
+                <span key={tag} style={{ background: '#1a1a1a', border: '1px solid #444', padding: '1px 6px', fontSize: '10px', color: '#aaa' }}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+            <div style={{ color: '#aaffaa', lineHeight: '1.5' }}>{project.desc}</div>
+            <a
+              href={project.link}
+              target="_blank"
+              rel="noreferrer"
+              onClick={e => e.stopPropagation()}
+              style={{ display: 'inline-block', marginTop: '12px', color: '#33ff33', textDecoration: 'underline', fontSize: '11px' }}
+            >
+              VIEW PROJECT ↗
+            </a>
+          </div>
+
+          {/* Navigation */}
+          <div style={{ borderTop: '1px solid #1a4d1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: '#060f06' }}>
+            <button onClick={prev} style={arrowBtn}>◀</button>
+            <span className="crt-text" style={{ color: '#33ff33', opacity: 0.5 }}>{idx + 1} / {PROJECTS.length}</span>
+            <button onClick={next} style={arrowBtn}>▶</button>
+          </div>
+        </div>
+      </Html>
+    </mesh>
+  );
+}
+
+const arrowBtn = {
+  background: 'none',
+  border: '1px solid #1a4d1a',
+  color: '#33ff33',
+  textShadow: '0 0 6px rgba(51,255,51,0.8)',
+  fontFamily: "'Courier New', monospace",
+  fontSize: '14px',
+  padding: '2px 10px',
+  cursor: 'pointer',
+  lineHeight: 1,
+};
+
 function collectMeshes(obj) {
   const meshes = [];
   obj.traverse((child) => { if (child.isMesh) meshes.push(child); });
   return meshes;
 }
 
-function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentCam, setCurrentCam }) {
+function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentCam, setCurrentCam, onReady, bootDone }) {
   const { scene: gltfScene, cameras } = useGLTF('/scene.glb');
   const { scene: r3fScene, gl } = useThree();
   const mainCamRef = useRef();
@@ -110,6 +342,7 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
   const pausePlayBtnRef = useRef(null);
   const [meshMap, setMeshMap] = useState({});
   const [boomboxPos, setBoomboxPos] = useState(null);
+  const [screenTransform, setScreenTransform] = useState(null);
 
   useEffect(() => {
     gl.toneMapping = THREE.NoToneMapping;
@@ -163,9 +396,18 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
       if (obj.name === 'Pause_Play_Button') {
         pausePlayBtnRef.current = obj;
       }
+      // Find the screen mesh by material name
+      if (obj.isMesh && obj.name === 'Cube001_1') {
+        const pos = new THREE.Vector3();
+        const quat = new THREE.Quaternion();
+        obj.getWorldPosition(pos);
+        obj.getWorldQuaternion(quat);
+        setScreenTransform({ pos, quat });
+      }
     });
     setMeshMap(found);
-  }, [cameras, gl, gltfScene, r3fScene, setAvailableCameras, setCurrentCam]);
+    onReady();
+  }, [cameras, gl, gltfScene, r3fScene, setAvailableCameras, setCurrentCam, onReady]);
 
   useEffect(() => {
     const targets = hoveredCam ? (meshMap[hoveredCam] ?? []) : [];
@@ -181,7 +423,6 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
 
   const handleClick = (e) => {
     e.stopPropagation();
-    console.log('CLICK currentCam:', currentCam, '| hit:', e.object?.name);
     let obj = e.object;
     while (obj) {
       // Pause/Play button — only active when zoomed in at BoomBoxCam
@@ -207,11 +448,9 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
         return;
       }
       const cam = GROUP_TO_CAM[obj.name];
-      if (cam) { console.log('  -> transitioning to', cam); window.transitionToCamera(cam); return; }
-      console.log('  -> walking past', obj.name, obj.type);
+      if (cam) { window.transitionToCamera(cam); return; }
       obj = obj.parent;
     }
-    console.log('  -> no match found');
   };
 
   const handlePointerOver = (e) => {
@@ -266,19 +505,23 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
         <RadioAudio position={boomboxPos} url="/music.mp3" audioControlRef={audioControlRef} />
       )}
 
-      <mesh position={[-8.9, 6.6, -4]} rotation={[0, -105.2, 0]}>
-        <Html transform occlude distanceFactor={2.5}>
-          <div className="contact-paper">
-            <h2 style={{ borderBottom: '2px solid black', margin: '0 0 10px 0' }}>SIGNAL_ID</h2>
-            <p><strong>Nathan Balducci</strong></p>
-            <p style={{ fontSize: '12px' }}>Dev Bio: Building digital artifacts.</p>
-            <form onSubmit={(e) => e.preventDefault()}>
-              <textarea placeholder="Type message..." />
-              <button className="send-btn">SEND SIGNAL</button>
-            </form>
-          </div>
-        </Html>
-      </mesh>
+      {bootDone && screenTransform && <ConsoleScreen transform={screenTransform} />}
+
+      {bootDone && (
+        <mesh position={[-8.9, 6.6, -4]} rotation={[0, -105.2, 0]}>
+          <Html transform occlude distanceFactor={2.5}>
+            <div className="contact-paper">
+              <h2 style={{ borderBottom: '2px solid black', margin: '0 0 10px 0' }}>SIGNAL_ID</h2>
+              <p><strong>Nathan Balducci</strong></p>
+              <p style={{ fontSize: '12px' }}>Dev Bio: Building digital artifacts.</p>
+              <form onSubmit={(e) => e.preventDefault()}>
+                <textarea placeholder="Type message..." />
+                <button className="send-btn">SEND SIGNAL</button>
+              </form>
+            </div>
+          </Html>
+        </mesh>
+      )}
     </>
   );
 }
@@ -287,6 +530,10 @@ export default function App() {
   const [camList, setCamList] = useState([]);
   const [hoveredCam, setHoveredCam] = useState(null);
   const [currentCam, setCurrentCam] = useState('DefaultCam');
+  const [sceneReady, setSceneReady] = useState(false);
+  const [bootDone, setBootDone] = useState(false);
+  const handleSceneReady = useCallback(() => setSceneReady(true), []);
+  const handleBootDone   = useCallback(() => setBootDone(true), []);
 
   const cameraLabels = {
     'DefaultCam': 'HSDX.AM',
@@ -297,6 +544,13 @@ export default function App() {
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative', background: '#000' }}>
+
+      {!bootDone && (
+        <BootScreen
+          sceneReady={sceneReady}
+          onDone={handleBootDone}
+        />
+      )}
 
       <div className="ui-overlay">
         <div className="status-bar">HSDX_OS // USER_LOGIN</div>
@@ -320,13 +574,15 @@ export default function App() {
         gl={{ antialias: false }}
         style={{ position: 'absolute', top: 0, left: 0 }}
       >
-        <Suspense fallback={<Html center><div style={{ color: 'white', fontFamily: 'monospace' }}>MOUNTING...</div></Html>}>
+        <Suspense fallback={null}>
           <SceneContent
             setAvailableCameras={setCamList}
             hoveredCam={hoveredCam}
             setHoveredCam={setHoveredCam}
             currentCam={currentCam}
             setCurrentCam={setCurrentCam}
+            onReady={handleSceneReady}
+            bootDone={bootDone}
           />
         </Suspense>
       </Canvas>

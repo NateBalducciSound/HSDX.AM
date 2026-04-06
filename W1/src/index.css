@@ -1,3 +1,77 @@
+@keyframes crt-flicker {
+  0%   { opacity: 1; }
+  92%  { opacity: 1; }
+  93%  { opacity: 0.85; }
+  94%  { opacity: 1; }
+  96%  { opacity: 0.9; }
+  100% { opacity: 1; }
+}
+
+@keyframes scanline-scroll {
+  from { background-position: 0 0; }
+  to   { background-position: 0 100%; }
+}
+
+.crt-screen {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  animation: crt-flicker 6s infinite;
+  box-shadow:
+    0 0 8px rgba(51,255,51,0.4),
+    0 0 24px rgba(51,255,51,0.15),
+    inset 0 0 40px rgba(0,0,0,0.6);
+}
+
+/* Scanlines overlay */
+.crt-screen::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0,0,0,0.18) 2px,
+    rgba(0,0,0,0.18) 4px
+  );
+}
+
+/* Vignette overlay */
+.crt-screen::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  background: radial-gradient(ellipse at center,
+    transparent 55%,
+    rgba(0,0,0,0.65) 100%
+  );
+}
+
+.crt-text {
+  text-shadow:
+    0 0 4px rgba(51,255,51,0.9),
+    0 0 10px rgba(51,255,51,0.4);
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.boot-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 1em;
+  background: #33ff33;
+  vertical-align: text-bottom;
+  animation: blink 0.8s step-start infinite;
+}
+
 html, body, #root {
   margin: 0; padding: 0; width: 100%; height: 100%;
   overflow: hidden; background-color: #000;
