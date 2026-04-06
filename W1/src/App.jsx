@@ -130,14 +130,14 @@ const BOOT_LINES = [
   'MOUNTING...',
 ];
 
-const CHAR_SPEED = 9;    // ms per character
-const LINE_PAUSE = 45;    // ms pause after each line finishes
+const CHAR_SPEED = 6;    // ms per character
+const LINE_PAUSE = 30;    // ms pause after each line finishes
 
 function lineColor(text) {
   if (text.startsWith('──'))      return '#1a8c1a';
   if (text.startsWith('MOUNTING')) return '#ffffff';
   if (text.startsWith('USER') || text.startsWith('SESSION')) return '#aaffaa';
-  return '#33ff33';
+  return '#33ff33'; 
 }
 
 function BootScreen({ sceneReady, onDone }) {
