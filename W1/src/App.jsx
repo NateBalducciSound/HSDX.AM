@@ -1,6 +1,7 @@
 import React, { Suspense, useRef, useEffect, useState, useCallback } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { useGLTF, Html, PerspectiveCamera, Grid, PositionalAudio } from '@react-three/drei';
+import { useGLTF, Html, PerspectiveCamera, Grid, PositionalAudio, Environment } from '@react-three/drei';
+import { EffectComposer, Bloom, Noise, Vignette, ChromaticAberration } from '@react-three/postprocessing';
 import { gsap } from 'gsap';
 import * as THREE from 'three';
 
@@ -141,15 +142,15 @@ function lineColor(text) {
 }
 
 function BootScreen({ sceneReady, onDone }) {
-  const [doneLines, setDoneLines] = useState([]);   // fully typed lines
-  const [activeLine, setActiveLine] = useState(''); // line currently being typed
+  const [doneLines, setDoneLines] = useState([]);
+  const [activeLine, setActiveLine] = useState('');
   const [lineIdx, setLineIdx]       = useState(0);
   const [charIdx, setCharIdx]       = useState(0);
   const [fading, setFading]         = useState(false);
 
   const bootDone = lineIdx >= BOOT_LINES.length;
 
-  // Character-by-character typewriter
+  // typewriter
   useEffect(() => {
     if (bootDone) return;
     const full = BOOT_LINES[lineIdx];
@@ -170,13 +171,13 @@ function BootScreen({ sceneReady, onDone }) {
     }
   }, [lineIdx, charIdx, bootDone]);
 
-  // Keep activeLine in sync with charIdx
+  // Keep active line in sync
   useEffect(() => {
     if (bootDone) return;
     setActiveLine(BOOT_LINES[lineIdx]?.slice(0, charIdx) ?? '');
-  }, [charIdx, lineIdx, bootDone]);
+  }, [charIdx, lineIdx, bootDone]); 
 
-  // Fade out once text done AND scene ready, then call onDone after fade
+  // Fade out after boot
   useEffect(() => {
     if (!bootDone || !sceneReady) return;
     const fadeStart = setTimeout(() => setFading(true), 300);
@@ -340,7 +341,7 @@ function collectMeshes(obj) {
   return meshes;
 }
 
-function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentCam, setCurrentCam, onReady }) {
+function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentCam, setCurrentCam, onReady, panelsVisible }) {
   const { scene: gltfScene, cameras } = useGLTF('/scene.glb');
   const { scene: r3fScene, gl } = useThree();
   const mainCamRef = useRef();
@@ -350,6 +351,15 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
   const [meshMap, setMeshMap] = useState({});
   const [boomboxPos, setBoomboxPos] = useState(null);
   const [screenTransform, setScreenTransform] = useState(null);
+
+  // Force drei to recompute Html positions when panels first become visible
+  useEffect(() => {
+    if (!panelsVisible || !mainCamRef.current) return;
+    const cam = mainCamRef.current;
+    cam.position.x += 0.0001;
+    const raf = requestAnimationFrame(() => { cam.position.x -= 0.0001; });
+    return () => cancelAnimationFrame(raf);
+  }, [panelsVisible]);
 
   useEffect(() => {
     gl.toneMapping = THREE.NoToneMapping;
@@ -410,6 +420,15 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
         obj.getWorldPosition(pos);
         obj.getWorldQuaternion(quat);
         setScreenTransform({ pos, quat });
+      }
+      // Exclude radio tower from fog so it stays crisp in the background
+      if (obj.name === 'RadioTowerglb' || obj.name?.includes('Tower')) {
+        obj.traverse(child => {
+          if (child.isMesh && child.material) {
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach(m => { m.fog = false; });
+          }
+        });
       }
     });
     setMeshMap(found);
@@ -505,8 +524,13 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
     <>
       <PerspectiveCamera makeDefault ref={mainCamRef} fov={75} far={1000} />
 
-      <ambientLight intensity={1.0} />
-      <directionalLight position={[5, 10, 5]} intensity={1.5} />
+      <color attach="background" args={['#050505']} />
+      <fogExp2 attach="fog" args={['#050505', 0.05]} />
+      <Environment preset="night" blur={1} />
+
+      <ambientLight intensity={1.8} />
+      {/* Subtle cool fill so the atmosphere reads without creating harsh shadows */}
+      <pointLight position={[-5, 8, -5]} intensity={0.2} color="#223344" />
 
       <primitive
         object={gltfScene}
@@ -521,21 +545,30 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
         <RadioAudio position={boomboxPos} url="/music.mp3" audioControlRef={audioControlRef} />
       )}
 
-      {screenTransform && <ConsoleScreen transform={screenTransform} />}
+      {screenTransform && panelsVisible && <ConsoleScreen transform={screenTransform} />}
 
-      <mesh position={[-8.9, 6.6, -4]} rotation={[0, -105.2, 0]}>
-        <Html transform occlude distanceFactor={2.5}>
-          <div className="contact-paper">
-            <h2 style={{ borderBottom: '2px solid black', margin: '0 0 10px 0' }}>SIGNAL_ID</h2>
-            <p><strong>Nathan Balducci</strong></p>
-            <p style={{ fontSize: '12px' }}>Dev Bio: Building digital artifacts.</p>
-            <form onSubmit={(e) => e.preventDefault()}>
-              <textarea placeholder="Type message..." />
-              <button className="send-btn">SEND SIGNAL</button>
-            </form>
-          </div>
-        </Html>
-      </mesh>
+      {panelsVisible && (
+        <mesh position={[-8.9, 6.6, -4]} rotation={[0, -105.2, 0]}>
+          <Html transform occlude distanceFactor={2.5}>
+            <div className="contact-paper">
+              <h2 style={{ borderBottom: '2px solid black', margin: '0 0 10px 0' }}>SIGNAL_ID</h2>
+              <p><strong>Nathan Balducci</strong></p>
+              <p style={{ fontSize: '12px' }}>Dev Bio: Building digital artifacts.</p>
+              <form onSubmit={(e) => e.preventDefault()}>
+                <textarea placeholder="Type message..." />
+                <button className="send-btn">SEND SIGNAL</button>
+              </form>
+            </div>
+          </Html>
+        </mesh>
+      )}
+
+      <EffectComposer>
+        <Bloom luminanceThreshold={0.9} intensity={0.8} mipmapBlur />
+        <Noise opacity={0.04} />
+        <Vignette eskil={false} offset={0.15} darkness={1.0} />
+        <ChromaticAberration offset={[0.0008, 0.0008]} />
+      </EffectComposer>
     </>
   );
 }
@@ -609,6 +642,7 @@ export default function App() {
             currentCam={currentCam}
             setCurrentCam={setCurrentCam}
             onReady={handleSceneReady}
+            panelsVisible={bootDone}
           />
         </Suspense>
       </Canvas>
