@@ -1,7 +1,7 @@
 import React, { Suspense, useRef, useEffect, useState, useCallback } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { useGLTF, Html, PerspectiveCamera, Grid, PositionalAudio, Environment } from '@react-three/drei';
-import { EffectComposer, Bloom, Noise, Vignette, ChromaticAberration } from '@react-three/postprocessing';
+import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { gsap } from 'gsap';
 import * as THREE from 'three';
 
@@ -189,7 +189,7 @@ function BootScreen({ sceneReady, onDone }) {
     <div style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 1000,
+        zIndex: 10000,
         background: '#000',
         padding: '40px 48px',
         boxSizing: 'border-box',
@@ -259,9 +259,11 @@ function ConsoleScreen({ transform }) {
     <mesh position={[pos.x, pos.y, pos.z]} rotation={[euler.x, euler.y, euler.z]}>
       <Html
         transform
+        occlude="blending"
         distanceFactor={3.53}
-        position={[0, 0, 0.2]}
+        position={[0, 0, 0.05]}
         style={{ pointerEvents: 'none' }}
+        zIndexRange={[100, 0]}
       >
         <div className="crt-screen" style={{
           width: '320px',
@@ -335,6 +337,77 @@ const arrowBtn = {
   lineHeight: 1,
 };
 
+function ContactPaper() {
+  const [sigMessage, setSigMessage] = useState('');
+  const [sigName, setSigName] = useState('');
+  const [sigEmail, setSigEmail] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const handleSend = (e) => {
+    e.preventDefault();
+    if (sending) return;
+    setSending(true);
+    setTimeout(() => {
+      setSigMessage('');
+      setSigName('');
+      setSigEmail('');
+      setSending(false);
+    }, 1400);
+  };
+
+  return (
+    <div className="contact-paper">
+      <img src="/HSDX_ASCII.png" className="paper-watermark" alt="" />
+      <div className="paper-header">
+        <span className="paper-handle">HSDX.AM</span>
+      </div>
+      <p>Dev Bio: Hes, a.k.a. Nathan Balducci, is a game developer, music producer, and audio programmer. With a unique blend of skills ranging from audio engineering to 3D modeling, Nathan infuses his dynamic range of abilities into his love for video games of all kinds. In an attempt to bolster their skills even further, they are currently getting their BFA in Creative Computing: Game Design and Music Technology at the California Institute of the Arts.</p>
+      <p>With a background in classical percussion for over 10 years, Nathan has created an eclectic and diverse musical production style and has written music for projects such as Healthy Zoo. They also developed sound design skills and have lent their work to student films such as Little Lies, Little Crimes.</p>
+      <p>Nathan aspires to work in the games industry as an audio specialist and game programmer, and has a wide range of experience with industry tools such as WWise, Unreal Engine, Unity, and more. Nathan ultimately hopes to bring the same level of joy to the next generation as game developers in the past had done for him.</p>
+      <form onSubmit={handleSend}>
+        <div className="parchment-write-area">
+          <div className="sign-label">leave a message</div>
+          <div className={`sig-text-wrap${sending ? ' sending' : ''}`}>
+            <textarea
+              placeholder="write here..."
+              rows={2}
+              value={sigMessage}
+              onChange={(e) => setSigMessage(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="parchment-write-area parchment-sign">
+          <div className="sig-sign-row">
+            <span className="sig-x">✗</span>
+            <div className={`sig-text-wrap sig-inline${sending ? ' sending' : ''}`}>
+              <textarea
+                placeholder=""
+                rows={1}
+                value={sigName}
+                onChange={(e) => setSigName(e.target.value)}
+              />
+            </div>
+            <div className={`sig-text-wrap sig-inline${sending ? ' sending' : ''}`}>
+              <textarea
+                placeholder="email"
+                rows={1}
+                value={sigEmail}
+                onChange={(e) => setSigEmail(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="sig-sign-labels">
+            <span className="sign-cursive">signature</span>
+            <span className="sign-cursive">email</span>
+          </div>
+          <div className="sign-line" />
+        </div>
+        <button className="send-btn" type="submit">— Transmit —</button>
+      </form>
+    </div>
+  );
+}
+
 function collectMeshes(obj) {
   const meshes = [];
   obj.traverse((child) => { if (child.isMesh) meshes.push(child); });
@@ -351,7 +424,6 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
   const [meshMap, setMeshMap] = useState({});
   const [boomboxPos, setBoomboxPos] = useState(null);
   const [screenTransform, setScreenTransform] = useState(null);
-
   // Force drei to recompute Html positions when panels first become visible
   useEffect(() => {
     if (!panelsVisible || !mainCamRef.current) return;
@@ -548,26 +620,16 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
       {screenTransform && panelsVisible && <ConsoleScreen transform={screenTransform} />}
 
       {panelsVisible && (
-        <mesh position={[-8.9, 6.6, -4]} rotation={[0, -105.2, 0]}>
-          <Html transform occlude distanceFactor={2.5}>
-            <div className="contact-paper">
-              <h2 style={{ borderBottom: '2px solid black', margin: '0 0 10px 0' }}>SIGNAL_ID</h2>
-              <p><strong>Nathan Balducci</strong></p>
-              <p style={{ fontSize: '12px' }}>Dev Bio: Building digital artifacts.</p>
-              <form onSubmit={(e) => e.preventDefault()}>
-                <textarea placeholder="Type message..." />
-                <button className="send-btn">SEND SIGNAL</button>
-              </form>
-            </div>
+        <mesh position={[-8.94, 6.6, -5.8]} rotation={[0, -105.25, 0]}>
+          <Html transform occlude distanceFactor={2.5} zIndexRange={[100, 0]}>
+            <ContactPaper />
           </Html>
         </mesh>
       )}
 
       <EffectComposer>
         <Bloom luminanceThreshold={0.9} intensity={0.8} mipmapBlur />
-        <Noise opacity={0.04} />
         <Vignette eskil={false} offset={0.15} darkness={1.0} />
-        <ChromaticAberration offset={[0.0008, 0.0008]} />
       </EffectComposer>
     </>
   );
