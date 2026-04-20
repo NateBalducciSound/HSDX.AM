@@ -138,7 +138,7 @@ function lineColor(text) {
   if (text.startsWith('──'))      return '#1a8c1a';
   if (text.startsWith('MOUNTING')) return '#ffffff';
   if (text.startsWith('USER') || text.startsWith('SESSION')) return '#aaffaa';
-  return '#33ff33'; 
+  return '#33ff33';
 }
 
 function BootScreen({ sceneReady, onDone }) {
@@ -160,7 +160,7 @@ function BootScreen({ sceneReady, onDone }) {
       const t = setTimeout(() => setCharIdx(c => c + 1), CHAR_SPEED);
       return () => clearTimeout(t);
     } else {
-      // Line complete — pause then advance
+      // Line complete pause
       const t = setTimeout(() => {
         setDoneLines(prev => [...prev, full]);
         setActiveLine('');
@@ -175,13 +175,13 @@ function BootScreen({ sceneReady, onDone }) {
   useEffect(() => {
     if (bootDone) return;
     setActiveLine(BOOT_LINES[lineIdx]?.slice(0, charIdx) ?? '');
-  }, [charIdx, lineIdx, bootDone]); 
+  }, [charIdx, lineIdx, bootDone]);
 
   // Fade out after boot
   useEffect(() => {
     if (!bootDone || !sceneReady) return;
     const fadeStart = setTimeout(() => setFading(true), 300);
-    const done      = setTimeout(() => onDone(), 300 + 650); // 300 delay + 600 fade + buffer
+    const done      = setTimeout(() => onDone(), 300 + 650); // 300 delay
     return () => { clearTimeout(fadeStart); clearTimeout(done); };
   }, [bootDone, sceneReady, onDone]);
 
@@ -220,7 +220,7 @@ function BootScreen({ sceneReady, onDone }) {
   );
 }
 
-// ─── Edit your projects here ──────────────────────────────────────────────────
+// edit projects
 const PROJECTS = [
   {
       title: 'CHEWS',
@@ -251,7 +251,7 @@ function ConsoleScreen({ transform }) {
   const prev = (e) => { e.stopPropagation(); setIdx(i => (i - 1 + PROJECTS.length) % PROJECTS.length); };
   const next = (e) => { e.stopPropagation(); setIdx(i => (i + 1) % PROJECTS.length); };
 
-  // Build a rotation array from the quaternion
+  // rotate for panels
   const euler = new THREE.Euler().setFromQuaternion(transform.quat);
   const { pos } = transform;
 
@@ -277,7 +277,7 @@ function ConsoleScreen({ transform }) {
         }}>
           {/* Header */}
           <div className="crt-text" style={{ background: '#060f06', padding: '6px 10px', borderBottom: '1px solid #1a4d1a', display: 'flex', justifyContent: 'space-between' }}>
-            <span>HSDX_WORKS</span>
+            <span>@ Copyright 2026 Nathan Balducci</span>
             <a
               href={ITCH_URL}
               target="_blank"
@@ -342,7 +342,7 @@ function ContactPaper() {
   const [sigName, setSigName] = useState('');
   const [sigEmail, setSigEmail] = useState('');
   const [sending, setSending] = useState(false);
-
+    
   const handleSend = (e) => {
     e.preventDefault();
     if (sending) return;
@@ -644,7 +644,7 @@ export default function App() {
 
   const cameraLabels = {
     'DefaultCam': 'HSDX.AM',
-    'ConsoleCam':  'GAMES', 
+    'ConsoleCam':  'GAMES',
     'OutdoorCam':  'MUSIC',
     'PhoneCam':    'INFO',
   };
