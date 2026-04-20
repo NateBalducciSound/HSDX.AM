@@ -523,7 +523,7 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
     e.stopPropagation();
     let obj = e.object;
     while (obj) {
-      // Pause/Play button — only active when zoomed in at BoomBoxCam
+      // Pause/Play button
       if (obj.name === 'Pause_Play_Button' && currentCam === 'BoomBoxCam') {
         audioControlRef.current?.toggle();
         // Animate press-in along the button's local Y axis then spring back
@@ -536,7 +536,7 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
         }
         return;
       }
-      // BoomBox body — two-stage camera zoom
+      // BoomBox body zoom
       if (obj.name === 'RadioBoomBoxglb') {
         if (currentCam === 'OutdoorCam') {
           window.transitionToCamera('BoomBoxCam');
@@ -545,7 +545,7 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
         }
         return;
       }
-      // Console desk — two-stage camera zoom
+      // Console desk zoom
       if (obj.name === 'RadioStationDeskglb') {
         if (currentCam === 'ConsoleCam') {
           window.transitionToCamera('ScreenCam');
@@ -569,7 +569,6 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
       if (cam) {
         const suppressed = GROUP_SUPPRESSED_CAMS[obj.name] ?? [];
         if (suppressed.includes(currentCam)) {
-          // Already inside this area — no highlight
           setHoveredCam(null);
           document.body.style.cursor = 'default';
         } else {
@@ -601,7 +600,6 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
       <Environment preset="night" blur={1} />
 
       <ambientLight intensity={1.8} />
-      {/* Subtle cool fill so the atmosphere reads without creating harsh shadows */}
       <pointLight position={[-5, 8, -5]} intensity={0.2} color="#223344" />
 
       <primitive
@@ -648,7 +646,7 @@ export default function App() {
     'DefaultCam': 'HSDX.AM',
     'ConsoleCam':  'GAMES', 
     'OutdoorCam':  'MUSIC',
-    'PhoneCam':    'SIGNAL',
+    'PhoneCam':    'INFO',
   };
 
   return (
