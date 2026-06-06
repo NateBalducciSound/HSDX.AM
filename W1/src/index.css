@@ -64,6 +64,68 @@
   50%       { opacity: 0; }
 }
 
+
+@keyframes consoleSend {
+  0%   { opacity: 1; }
+  40%  { opacity: 0.6; color: #aaffaa; }
+  100% { opacity: 0; }
+}
+
+.console-sending {
+  animation: consoleSend 1.2s ease-in forwards;
+  pointer-events: none;
+}
+
+/* ── Sleep screen standby LED ── */
+@keyframes standbyPulse {
+  0%, 100% { opacity: 0.18; box-shadow: 0 0 3px rgba(51,255,51,0.3); }
+  50%       { opacity: 0.55; box-shadow: 0 0 7px rgba(51,255,51,0.7); }
+}
+
+.standby-led {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #33ff33;
+  animation: standbyPulse 2.8s ease-in-out infinite;
+}
+
+/* ── Overlay backdrop fade ── */
+@keyframes bgFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── CRT power-on: flash → horizontal collapse → expand with scan ── */
+@keyframes crtPowerOn {
+  0%   { transform: scaleY(0.003) scaleX(1);   opacity: 1; filter: brightness(8); }
+  12%  { transform: scaleY(0.003) scaleX(0.6); opacity: 1; filter: brightness(6); }
+  30%  { transform: scaleY(1)     scaleX(1);   opacity: 1; filter: brightness(2.5); }
+  55%  { transform: scaleY(1)     scaleX(1);   opacity: 0.85; filter: brightness(1.4); }
+  75%  { transform: scaleY(1)     scaleX(1);   opacity: 1; filter: brightness(1.1); }
+  88%  { opacity: 0.92; filter: brightness(0.95); }
+  100% { transform: scaleY(1)     scaleX(1);   opacity: 1; filter: brightness(1); }
+}
+
+.crt-poweron {
+  width: 100%;
+  height: 100%;
+  background: #0a2a0a;
+  animation: crtPowerOn 0.75s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transform-origin: center center;
+}
+
+/* ── Content fades in after power-on ── */
+@keyframes contentFadeIn {
+  from { opacity: 0; filter: brightness(1.8); }
+  to   { opacity: 1; filter: brightness(1); }
+}
+
+.crt-content-fadein {
+  animation: contentFadeIn 0.4s ease forwards;
+}
+
 .boot-cursor {
   display: inline-block;
   width: 8px;

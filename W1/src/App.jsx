@@ -13,18 +13,16 @@ const OUTLINE_MAT = new THREE.MeshBasicMaterial({
 });
 
 const GROUP_TO_CAM = {
-  'RadioBoomBoxglb':     'OutdoorCam',
-  'Box':                 'PhoneCam',
+  'RadioBoomBoxglb': 'OutdoorCam',
+  'Box':             'PhoneCam',
 };
 
-// Used for hover highlighting — includes desk even though it has custom click logic
 const GROUP_TO_HIGHLIGHT_CAM = {
   'RadioStationDeskglb': 'ConsoleCam',
   'RadioBoomBoxglb':     'OutdoorCam',
   'Box':                 'PhoneCam',
 };
 
-// Cams where the group's highlight should be suppressed (already "inside" that area)
 const GROUP_SUPPRESSED_CAMS = {
   'RadioStationDeskglb': ['ConsoleCam', 'ScreenCam'],
   'RadioBoomBoxglb':     ['OutdoorCam', 'BoomBoxCam'],
@@ -41,7 +39,6 @@ function makeDistortionCurve(amount = 20) {
   return curve;
 }
 
-// audioControlRef.current = { toggle }  — wired by RadioAudio, called by SceneContent
 function RadioAudio({ position, url, audioControlRef }) {
   const audioRef = useRef();
   const { camera } = useThree();
@@ -56,7 +53,6 @@ function RadioAudio({ position, url, audioControlRef }) {
       camera.add(audio.listener);
     }
 
-    // More aggressive bandpass: kill below 800 Hz and above 2500 Hz
     const hp = ctx.createBiquadFilter();
     hp.type = 'highpass';
     hp.frequency.value = 800;
@@ -74,7 +70,6 @@ function RadioAudio({ position, url, audioControlRef }) {
     audio.setFilters([hp, shaper, lp]);
     audio.setVolume(0.4);
 
-    // Expose toggle so the Pause_Play_Button mesh can control playback
     audioControlRef.current = {
       toggle: () => {
         if (audio.isPlaying) {
@@ -131,8 +126,8 @@ const BOOT_LINES = [
   'MOUNTING...',
 ];
 
-const CHAR_SPEED = 6;    // ms per character
-const LINE_PAUSE = 30;    // ms pause after each line finishes
+const CHAR_SPEED = 6;
+const LINE_PAUSE = 30;
 
 function lineColor(text) {
   if (text.startsWith('──'))      return '#1a8c1a';
@@ -150,17 +145,13 @@ function BootScreen({ sceneReady, onDone }) {
 
   const bootDone = lineIdx >= BOOT_LINES.length;
 
-  // typewriter
   useEffect(() => {
     if (bootDone) return;
     const full = BOOT_LINES[lineIdx];
-
     if (charIdx < full.length) {
-      // Type next character
       const t = setTimeout(() => setCharIdx(c => c + 1), CHAR_SPEED);
       return () => clearTimeout(t);
     } else {
-      // Line complete pause
       const t = setTimeout(() => {
         setDoneLines(prev => [...prev, full]);
         setActiveLine('');
@@ -171,34 +162,25 @@ function BootScreen({ sceneReady, onDone }) {
     }
   }, [lineIdx, charIdx, bootDone]);
 
-  // Keep active line in sync
   useEffect(() => {
     if (bootDone) return;
     setActiveLine(BOOT_LINES[lineIdx]?.slice(0, charIdx) ?? '');
   }, [charIdx, lineIdx, bootDone]);
 
-  // Fade out after boot
   useEffect(() => {
     if (!bootDone || !sceneReady) return;
     const fadeStart = setTimeout(() => setFading(true), 300);
-    const done      = setTimeout(() => onDone(), 300 + 650); // 300 delay
+    const done      = setTimeout(() => onDone(), 300 + 650);
     return () => { clearTimeout(fadeStart); clearTimeout(done); };
   }, [bootDone, sceneReady, onDone]);
 
   return (
     <div style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 10000,
-        background: '#000',
-        padding: '40px 48px',
-        boxSizing: 'border-box',
-        fontFamily: "'Courier New', monospace",
-        fontSize: '13px',
-        lineHeight: '1.7',
-        overflowY: 'auto',
-        opacity: fading ? 0 : 1,
-        transition: 'opacity 0.6s ease',
+        position: 'fixed', inset: 0, zIndex: 10000, background: '#000',
+        padding: '40px 48px', boxSizing: 'border-box',
+        fontFamily: "'Courier New', monospace", fontSize: '13px',
+        lineHeight: '1.7', overflowY: 'auto',
+        opacity: fading ? 0 : 1, transition: 'opacity 0.6s ease',
       }}
     >
       {doneLines.map((line, i) => (
@@ -206,13 +188,11 @@ function BootScreen({ sceneReady, onDone }) {
           {line || '\u00a0'}
         </div>
       ))}
-      {/* Currently typing line with blinking cursor at end */}
       {!bootDone && (
         <div style={{ color: lineColor(BOOT_LINES[lineIdx] ?? ''), fontWeight: BOOT_LINES[lineIdx]?.startsWith('MOUNTING') ? 'bold' : 'normal' }}>
           {activeLine}<span className="boot-cursor" />
         </div>
       )}
-      {/* Waiting for scene after boot text done */}
       {bootDone && !sceneReady && (
         <div><span className="boot-cursor" /></div>
       )}
@@ -220,110 +200,32 @@ function BootScreen({ sceneReady, onDone }) {
   );
 }
 
-// edit projects
+// ── Projects data ──────────────────────────────────────────────────────────────
 const PROJECTS = [
   {
-      title: 'CHEWS',
-      tags: ['UNITY', 'C#', 'ChucK'],
+    title: 'CHEWS',
+    tags: ['UNITY', 'C#', 'ChucK'],
     desc: 'A procedural tool using the audio programming language ChucK.',
-      link: 'https://youtu.be/P47jwyYOaNw?si=kXnKMFaZg_3png2s',
+    link: 'https://youtu.be/P47jwyYOaNw?si=kXnKMFaZg_3png2s',
   },
   {
     title: 'Latest Game Jam',
     tags: ['Unity', 'C#'],
-      desc: 'My latest Contribution to a game jam. I was lead gameplay programmer, and did the level and game design.',
-      link: 'https://carnol16.itch.io/cowboy-cadavers',
+    desc: 'My latest contribution to a game jam. Lead gameplay programmer, level and game design.',
+    link: 'https://carnol16.itch.io/cowboy-cadavers',
   },
   {
     title: 'This Website',
-      tags: ['Blender', 'ThreeJS', 'HTML', 'React(Fiber and Drei)'],
-      desc: 'The Website you are on right now. I did all the 3D modeling, music, and web development.',
-      link: 'https://www.HSDX.am',
+    tags: ['Blender', 'ThreeJS', 'HTML', 'React'],
+    desc: 'The website you are on right now. All 3D modeling, music, and web development.',
+    link: 'https://www.HSDX.am',
   },
 ];
-const ITCH_URL = 'https://hesiodic.itch.io'; // ← replace with your itch.io profile URL
-// ──────────────────────────────────────────────────────────────────────────────
 
-function ConsoleScreen({ transform }) {
-  const [idx, setIdx] = useState(0);
-  const project = PROJECTS[idx];
+const BIO_SHORT = 'Hes (Nathan Balducci) — game dev, music producer, audio programmer. BFA: Creative Computing @ CalArts.';
+const BIO_FULL  = 'Hes, a.k.a. Nathan Balducci, is a game developer, music producer, and audio programmer. With a unique blend of skills ranging from audio engineering to 3D modeling, Nathan infuses his dynamic range of abilities into his love for video games. Currently getting their BFA in Creative Computing: Game Design and Music Technology at the California Institute of the Arts. With a background in classical percussion for over 10 years, Nathan has created an eclectic and diverse musical production style, writing music for projects such as Healthy Zoo and lending sound design to student films such as Little Lies, Little Crimes. Nathan aspires to work in the games industry as an audio specialist and game programmer.';
 
-  const prev = (e) => { e.stopPropagation(); setIdx(i => (i - 1 + PROJECTS.length) % PROJECTS.length); };
-  const next = (e) => { e.stopPropagation(); setIdx(i => (i + 1) % PROJECTS.length); };
-
-  // rotate for panels
-  const euler = new THREE.Euler().setFromQuaternion(transform.quat);
-  const { pos } = transform;
-
-  return (
-    <mesh position={[pos.x, pos.y, pos.z]} rotation={[euler.x, euler.y, euler.z]}>
-      <Html
-        transform
-        occlude="blending"
-        distanceFactor={3.53}
-        position={[0, 0, 0.05]}
-        style={{ pointerEvents: 'none' }}
-        zIndexRange={[100, 0]}
-      >
-        <div className="crt-screen" style={{
-          width: '320px',
-          background: '#020d02',
-          border: '2px solid #1a4d1a',
-          fontFamily: "'Courier New', monospace",
-          color: '#33ff33',
-          fontSize: '11px',
-          userSelect: 'none',
-          pointerEvents: 'none',
-        }}>
-          {/* Header */}
-          <div className="crt-text" style={{ background: '#060f06', padding: '6px 10px', borderBottom: '1px solid #1a4d1a', display: 'flex', justifyContent: 'space-between' }}>
-            <span>@ Copyright 2026 Nathan Balducci</span>
-            <a
-              href={ITCH_URL}
-              target="_blank"
-              rel="noreferrer"
-              onClick={e => e.stopPropagation()}
-              style={{ color: '#ff5555', textDecoration: 'none', fontWeight: 'bold', pointerEvents: 'auto' }}
-            >
-              ITCH.IO ↗
-            </a>
-          </div>
-
-          {/* Project display */}
-          <div style={{ padding: '14px 16px', minHeight: '120px' }}>
-            <div className="crt-text" style={{ color: '#aaffaa', fontWeight: 'bold', fontSize: '13px', marginBottom: '6px' }}>
-              {project.title}
-            </div>
-            <div style={{ marginBottom: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {project.tags.map(tag => (
-                <span key={tag} style={{ background: '#1a1a1a', border: '1px solid #444', padding: '1px 6px', fontSize: '10px', color: '#aaa' }}>
-                  {tag}
-                </span>
-              ))}
-            </div>
-            <div style={{ color: '#aaffaa', lineHeight: '1.5' }}>{project.desc}</div>
-            <a
-              href={project.link}
-              target="_blank"
-              rel="noreferrer"
-              onClick={e => e.stopPropagation()}
-              style={{ display: 'inline-block', marginTop: '12px', color: '#33ff33', textDecoration: 'underline', fontSize: '11px', pointerEvents: 'auto' }}
-            >
-              VIEW PROJECT ↗
-            </a>
-          </div>
-
-          {/* Navigation */}
-          <div style={{ borderTop: '1px solid #1a4d1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: '#060f06', pointerEvents: 'auto' }}>
-            <button onClick={prev} style={arrowBtn}>◀</button>
-            <span className="crt-text" style={{ color: '#33ff33', opacity: 0.5 }}>{idx + 1} / {PROJECTS.length}</span>
-            <button onClick={next} style={arrowBtn}>▶</button>
-          </div>
-        </div>
-      </Html>
-    </mesh>
-  );
-}
+const ITCH_URL = 'https://hesiodic.itch.io';
 
 const arrowBtn = {
   background: 'none',
@@ -335,76 +237,338 @@ const arrowBtn = {
   padding: '2px 10px',
   cursor: 'pointer',
   lineHeight: 1,
+  pointerEvents: 'auto',
 };
 
-function ContactPaper() {
-  const [sigMessage, setSigMessage] = useState('');
-  const [sigName, setSigName] = useState('');
-  const [sigEmail, setSigEmail] = useState('');
+const tabBtn = (active) => ({
+  background: active ? '#1a4d1a' : 'none',
+  border: 'none',
+  borderRight: '1px solid #1a4d1a',
+  color: active ? '#aaffaa' : '#33ff33',
+  fontFamily: "'Courier New', monospace",
+  fontSize: '10px',
+  padding: '4px 12px',
+  cursor: 'pointer',
+  pointerEvents: 'auto',
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+});
+
+// Shared console panel content — fills its container; parent controls width/height
+function ConsolePanelContent({ large = false, embedded = false }) {
+  const [tab, setTab] = useState('projects');
+  const [idx, setIdx] = useState(0);
+  const [msg, setMsg] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
-    
+  const [sent, setSent] = useState(false);
+
+  const project = PROJECTS[idx];
+  const prev = (e) => { e.stopPropagation(); setIdx(i => (i - 1 + PROJECTS.length) % PROJECTS.length); };
+  const next = (e) => { e.stopPropagation(); setIdx(i => (i + 1) % PROJECTS.length); };
+
   const handleSend = (e) => {
     e.preventDefault();
-    if (sending) return;
+    if (sending || (!msg && !name)) return;
     setSending(true);
     setTimeout(() => {
-      setSigMessage('');
-      setSigName('');
-      setSigEmail('');
+      setMsg(''); setName(''); setEmail('');
       setSending(false);
-    }, 1400);
+      setSent(true);
+      setTimeout(() => setSent(false), 3000);
+    }, 1200);
+  };
+
+  // Font sizes scale with large mode
+  const fs   = large ? '13px' : '11px';
+  const fsXs = large ? '12px' : '10px';
+  const fsLg = large ? '15px' : '13px';
+  const bio  = large ? BIO_FULL : BIO_SHORT;
+
+  const inputStyle = {
+    flex: 1,
+    background: 'transparent',
+    border: 'none',
+    borderBottom: '1px solid #1a4d1a',
+    outline: 'none',
+    color: '#aaffaa',
+    fontFamily: "'Courier New', monospace",
+    fontSize: fsXs,
+    minWidth: 0,
+    pointerEvents: 'auto',
   };
 
   return (
-    <div className="contact-paper">
-      <img src="/HSDX_ASCII.png" className="paper-watermark" alt="" />
-      <div className="paper-header">
-        <span className="paper-handle">HSDX.AM</span>
+    // Outer container: flex-column, fills parent — parent sets width & height
+    <div
+      className="crt-screen"
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        background: '#020d02',
+        border: '2px solid #1a4d1a',
+        fontFamily: "'Courier New', monospace",
+        color: '#33ff33',
+        fontSize: fs,
+        boxSizing: 'border-box',
+        userSelect: embedded ? 'none' : 'text',
+        pointerEvents: embedded ? 'none' : 'auto',
+      }}
+    >
+      {/* Header — fixed height */}
+      <div className="crt-text" style={{
+        flexShrink: 0,
+        background: '#060f06',
+        padding: '6px 10px',
+        borderBottom: '1px solid #1a4d1a',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}>
+        <span style={{ opacity: 0.65 }}>HSDX_OS $ ./portfolio</span>
+        <a
+          href={ITCH_URL}
+          target="_blank"
+          rel="noreferrer"
+          onClick={e => e.stopPropagation()}
+          style={{ color: '#ff5555', textDecoration: 'none', fontWeight: 'bold', pointerEvents: 'auto' }}
+        >
+          ITCH.IO ↗
+        </a>
       </div>
-      <p>Dev Bio: Hes, a.k.a. Nathan Balducci, is a game developer, music producer, and audio programmer. With a unique blend of skills ranging from audio engineering to 3D modeling, Nathan infuses his dynamic range of abilities into his love for video games of all kinds. In an attempt to bolster their skills even further, they are currently getting their BFA in Creative Computing: Game Design and Music Technology at the California Institute of the Arts.</p>
-      <p>With a background in classical percussion for over 10 years, Nathan has created an eclectic and diverse musical production style and has written music for projects such as Healthy Zoo. They also developed sound design skills and have lent their work to student films such as Little Lies, Little Crimes.</p>
-      <p>Nathan aspires to work in the games industry as an audio specialist and game programmer, and has a wide range of experience with industry tools such as WWise, Unreal Engine, Unity, and more. Nathan ultimately hopes to bring the same level of joy to the next generation as game developers in the past had done for him.</p>
-      <form onSubmit={handleSend}>
-        <div className="parchment-write-area">
-          <div className="sign-label">leave a message</div>
-          <div className={`sig-text-wrap${sending ? ' sending' : ''}`}>
-            <textarea
-              placeholder="write here..."
-              rows={2}
-              value={sigMessage}
-              onChange={(e) => setSigMessage(e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="parchment-write-area parchment-sign">
-          <div className="sig-sign-row">
-            <span className="sig-x">✗</span>
-            <div className={`sig-text-wrap sig-inline${sending ? ' sending' : ''}`}>
-              <textarea
-                placeholder=""
-                rows={1}
-                value={sigName}
-                onChange={(e) => setSigName(e.target.value)}
-              />
+
+      {/* Tabs — fixed height */}
+      <div style={{ flexShrink: 0, display: 'flex', borderBottom: '1px solid #1a4d1a', background: '#030a03' }}>
+        <button onClick={(e) => { e.stopPropagation(); setTab('projects'); }} style={tabBtn(tab === 'projects')}>
+          [projects]
+        </button>
+        <button onClick={(e) => { e.stopPropagation(); setTab('contact'); }} style={tabBtn(tab === 'contact')}>
+          [contact]
+        </button>
+      </div>
+
+      {/* Scrollable content — grows to fill remaining space */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px', boxSizing: 'border-box' }}>
+
+        {/* ── Projects tab ── */}
+        {tab === 'projects' && (
+          <>
+            <div style={{ color: '#33ff33', opacity: 0.55, marginBottom: '6px', fontSize: fsXs }}>
+              {'> cat project_0' + (idx + 1) + '.txt'}
             </div>
-            <div className={`sig-text-wrap sig-inline${sending ? ' sending' : ''}`}>
-              <textarea
-                placeholder="email"
-                rows={1}
-                value={sigEmail}
-                onChange={(e) => setSigEmail(e.target.value)}
-              />
+            <div style={{ borderTop: '1px solid #1a4d1a', borderBottom: '1px solid #1a4d1a', padding: '6px 0', marginBottom: '8px' }}>
+              <div className="crt-text" style={{ color: '#aaffaa', fontWeight: 'bold', fontSize: fsLg, marginBottom: '4px' }}>
+                {project.title}
+              </div>
+              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                {project.tags.map(tag => (
+                  <span key={tag} style={{
+                    background: '#0a1a0a', border: '1px solid #2a5a2a',
+                    padding: '1px 5px', fontSize: large ? '11px' : '9px', color: '#66cc66',
+                  }}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="sig-sign-labels">
-            <span className="sign-cursive">signature</span>
-            <span className="sign-cursive">email</span>
-          </div>
-          <div className="sign-line" />
-        </div>
-        <button className="send-btn" type="submit">— Transmit —</button>
-      </form>
+            <div style={{ color: '#aaffaa', lineHeight: '1.6', marginBottom: '10px' }}>
+              {project.desc}
+            </div>
+            <a
+              href={project.link} target="_blank" rel="noreferrer"
+              onClick={e => e.stopPropagation()}
+              style={{ color: '#33ff33', textDecoration: 'none', pointerEvents: 'auto', fontSize: fsXs }}
+            >
+              {'> VIEW_PROJECT ↗'}
+            </a>
+          </>
+        )}
+
+        {/* ── Contact tab ── */}
+        {tab === 'contact' && (
+          <>
+            <div style={{ color: '#33ff33', opacity: 0.55, marginBottom: '4px', fontSize: fsXs }}>
+              {'> cat bio.txt'}
+            </div>
+            <div style={{ borderTop: '1px solid #1a4d1a', paddingTop: '6px', marginBottom: '12px', color: '#aaffaa', lineHeight: '1.6', fontSize: fsXs }}>
+              {bio}
+            </div>
+            <div style={{ color: '#33ff33', opacity: 0.55, marginBottom: '6px', fontSize: fsXs }}>
+              {'> send_message --to hsdx.am'}
+            </div>
+            {sent && (
+              <div className="crt-text" style={{ color: '#aaffaa', marginBottom: '8px', fontSize: fsXs }}>
+                {'> MESSAGE TRANSMITTED ✓'}
+              </div>
+            )}
+            <form onSubmit={handleSend} style={{ pointerEvents: 'auto' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '6px' }}>
+                <span style={{ opacity: 0.6, fontSize: fsXs, flexShrink: 0, paddingTop: '2px' }}>MSG:</span>
+                <textarea
+                  placeholder="write here..."
+                  rows={large ? 3 : 2}
+                  value={msg}
+                  onChange={e => setMsg(e.target.value)}
+                  className={sending ? 'console-sending' : ''}
+                  style={{ flex: 1, background: 'transparent', border: 'none', borderBottom: '1px solid #1a4d1a', outline: 'none', resize: 'none', color: '#aaffaa', fontFamily: "'Courier New', monospace", fontSize: fsXs, lineHeight: 1.5, pointerEvents: 'auto' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  <span style={{ opacity: 0.6, fontSize: fsXs, flexShrink: 0 }}>SIG:</span>
+                  <input type="text" placeholder="name" value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
+                </div>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  <span style={{ opacity: 0.6, fontSize: fsXs, flexShrink: 0 }}>@:</span>
+                  <input type="email" placeholder="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
+                </div>
+              </div>
+              <button type="submit" style={{ width: '100%', background: 'none', border: '1px solid #1a4d1a', color: '#33ff33', fontFamily: "'Courier New', monospace", fontSize: fsXs, padding: '5px 0', cursor: 'pointer', letterSpacing: '0.1em', pointerEvents: 'auto', textShadow: '0 0 6px rgba(51,255,51,0.6)' }}>
+                {'> — TRANSMIT —'}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+
+      {/* Nav — always rendered (same height both tabs); hidden on contact tab */}
+      <div style={{
+        flexShrink: 0,
+        borderTop: '1px solid #1a4d1a',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '6px 12px',
+        background: '#060f06',
+        pointerEvents: tab === 'projects' ? 'auto' : 'none',
+        visibility: tab === 'projects' ? 'visible' : 'hidden',
+      }}>
+        <button onClick={prev} style={arrowBtn}>◀</button>
+        <span className="crt-text" style={{ color: '#33ff33', opacity: 0.5, fontSize: fsXs, letterSpacing: '0.1em' }}>
+          {String(idx + 1).padStart(2, '0')} / {String(PROJECTS.length).padStart(2, '0')}
+        </span>
+        <button onClick={next} style={arrowBtn}>▶</button>
+      </div>
     </div>
+  );
+}
+
+// Dimensions of the in-world sleep screen — overlay will match these exactly
+const SLEEP_W = 320;
+const SLEEP_H = 220;
+
+// Sleep-mode screen shown in the 3D world — black with a faint standby glow
+function ConsoleScreen({ transform }) {
+  const euler = new THREE.Euler().setFromQuaternion(transform.quat);
+  const { pos } = transform;
+
+  return (
+    <mesh position={[pos.x, pos.y, pos.z]} rotation={[euler.x, euler.y, euler.z]}>
+      <Html
+        transform
+        distanceFactor={3.53}
+        position={[0, 0, 0.05]}
+        style={{ pointerEvents: 'none' }}
+        zIndexRange={[100, 0]}
+      >
+        {/* id used by overlay to read exact screen-space rect after zoom */}
+        <div
+          id="crt-sleep-screen"
+          style={{
+            width: `${SLEEP_W}px`,
+            height: `${SLEEP_H}px`,
+            background: '#000',
+            borderRadius: '6px',
+            border: '2px solid #061006',
+            boxShadow: '0 0 6px rgba(51,255,51,0.08), 0 0 18px rgba(51,255,51,0.04)',
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'flex-end',
+            padding: '8px',
+            boxSizing: 'border-box',
+          }}
+        >
+          <span className="standby-led" />
+        </div>
+      </Html>
+    </mesh>
+  );
+}
+
+// Overlay shown when camera zooms in — positioned exactly over the 3D sleep screen
+function LargeConsoleOverlay({ onClose, screenRect }) {
+  const [phase, setPhase] = useState('powering'); // 'powering' | 'on'
+
+  useEffect(() => {
+    const t = setTimeout(() => setPhase('on'), 800);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  // Position the panel exactly where the 3D sleep screen is in the viewport
+  const panelStyle = screenRect
+    ? {
+        position: 'fixed',
+        left: screenRect.left,
+        top: screenRect.top,
+        width: screenRect.width,
+        height: screenRect.height,
+        zIndex: 5001,
+      }
+    : {
+        // Fallback: centered if rect wasn't captured
+        position: 'fixed',
+        top: '50%', left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '60vw', height: '60vh',
+        zIndex: 5001,
+      };
+
+  return (
+    <>
+      {/* Darkened backdrop */}
+      <div
+        style={{
+          position: 'fixed', inset: 0, zIndex: 5000,
+          background: 'rgba(0,4,0,0.88)',
+          animation: 'bgFadeIn 0.3s ease forwards',
+        }}
+        onClick={onClose}
+      />
+
+      {/* Panel pinned to screen mesh position */}
+      <div style={panelStyle}>
+        {/* Close hint above the panel */}
+        <div style={{
+          position: 'absolute', top: '-22px', right: 0,
+          fontFamily: "'Courier New', monospace", fontSize: '10px',
+          color: '#33ff33', opacity: 0.4, letterSpacing: '0.1em',
+          pointerEvents: 'none', whiteSpace: 'nowrap',
+        }}>
+          [ESC / CLICK OUTSIDE TO CLOSE]
+        </div>
+
+        {/* CRT shell fills the pinned area exactly */}
+        <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+          {phase === 'powering' && (
+            <div className="crt-poweron" style={{ width: '100%', height: '100%' }} />
+          )}
+          {phase === 'on' && (
+            <div className="crt-content-fadein" style={{ width: '100%', height: '100%' }}>
+              <ConsolePanelContent large />
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -414,7 +578,7 @@ function collectMeshes(obj) {
   return meshes;
 }
 
-function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentCam, setCurrentCam, onReady, panelsVisible }) {
+function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentCam, setCurrentCam, onReady, panelsVisible, onZoomComplete }) {
   const { scene: gltfScene, cameras } = useGLTF('/scene.glb');
   const { scene: r3fScene, gl } = useThree();
   const mainCamRef = useRef();
@@ -424,7 +588,7 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
   const [meshMap, setMeshMap] = useState({});
   const [boomboxPos, setBoomboxPos] = useState(null);
   const [screenTransform, setScreenTransform] = useState(null);
-  // Force drei to recompute Html positions when panels first become visible
+
   useEffect(() => {
     if (!panelsVisible || !mainCamRef.current) return;
     const cam = mainCamRef.current;
@@ -485,7 +649,6 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
       if (obj.name === 'Pause_Play_Button') {
         pausePlayBtnRef.current = obj;
       }
-      // Find the screen mesh by material name
       if (obj.isMesh && obj.name === 'Cube001_1') {
         const pos = new THREE.Vector3();
         const quat = new THREE.Quaternion();
@@ -493,7 +656,6 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
         obj.getWorldQuaternion(quat);
         setScreenTransform({ pos, quat });
       }
-      // Exclude radio tower from fog so it stays crisp in the background
       if (obj.name === 'RadioTowerglb' || obj.name?.includes('Tower')) {
         obj.traverse(child => {
           if (child.isMesh && child.material) {
@@ -523,10 +685,8 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
     e.stopPropagation();
     let obj = e.object;
     while (obj) {
-      // Pause/Play button
       if (obj.name === 'Pause_Play_Button' && currentCam === 'BoomBoxCam') {
         audioControlRef.current?.toggle();
-        // Animate press-in along the button's local Y axis then spring back
         const btn = pausePlayBtnRef.current;
         if (btn) {
           const origY = btn.position.y;
@@ -536,7 +696,6 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
         }
         return;
       }
-      // BoomBox body zoom
       if (obj.name === 'RadioBoomBoxglb') {
         if (currentCam === 'OutdoorCam') {
           window.transitionToCamera('BoomBoxCam');
@@ -545,11 +704,16 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
         }
         return;
       }
-      // Console desk zoom
       if (obj.name === 'RadioStationDeskglb') {
-        if (currentCam === 'ConsoleCam') {
+        if (currentCam === 'PanelZoomCam') {
+          // Click again from panel-zoom → step back to ScreenCam
           window.transitionToCamera('ScreenCam');
-        } else if (currentCam !== 'ScreenCam') {
+        } else if (currentCam === 'ScreenCam') {
+          // Third click: camera zooms into the screen itself
+          zoomToScreen();
+        } else if (currentCam === 'ConsoleCam') {
+          window.transitionToCamera('ScreenCam');
+        } else {
           window.transitionToCamera('ConsoleCam');
         }
         return;
@@ -591,6 +755,35 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
     }, 50);
   };
 
+  // Zoom camera into the screen mesh, then capture the sleep div's screen-space rect
+  const zoomToScreen = useCallback(() => {
+    if (!screenTransform || !mainCamRef.current) return;
+    const { pos, quat } = screenTransform;
+
+    const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(quat);
+    const camPos = pos.clone().addScaledVector(forward, 1.5);
+    const lookMat = new THREE.Matrix4().lookAt(camPos, pos, new THREE.Vector3(0, 1, 0));
+    const camQuat = new THREE.Quaternion().setFromRotationMatrix(lookMat);
+
+    gsap.to(mainCamRef.current.position, {
+      x: camPos.x, y: camPos.y, z: camPos.z,
+      duration: 1.2, ease: 'power2.inOut',
+    });
+    gsap.to(mainCamRef.current.quaternion, {
+      x: camQuat.x, y: camQuat.y, z: camQuat.z, w: camQuat.w,
+      duration: 1.2, ease: 'power2.inOut',
+      onUpdate: () => mainCamRef.current.updateProjectionMatrix(),
+      onComplete: () => {
+        // Wait one frame for drei to reposition the Html div, then read its rect
+        requestAnimationFrame(() => {
+          const el = document.getElementById('crt-sleep-screen');
+          const rect = el ? el.getBoundingClientRect() : null;
+          onZoomComplete(rect);
+        });
+      },
+    });
+  }, [screenTransform, onZoomComplete]);
+
   return (
     <>
       <PerspectiveCamera makeDefault ref={mainCamRef} fov={75} far={1000} />
@@ -617,14 +810,6 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
 
       {screenTransform && panelsVisible && <ConsoleScreen transform={screenTransform} />}
 
-      {panelsVisible && (
-        <mesh position={[-8.94, 6.6, -5.8]} rotation={[0, -105.25, 0]}>
-          <Html transform occlude distanceFactor={2.5} zIndexRange={[100, 0]}>
-            <ContactPaper />
-          </Html>
-        </mesh>
-      )}
-
       <EffectComposer>
         <Bloom luminanceThreshold={0.9} intensity={0.8} mipmapBlur />
         <Vignette eskil={false} offset={0.15} darkness={1.0} />
@@ -639,27 +824,51 @@ export default function App() {
   const [currentCam, setCurrentCam] = useState('DefaultCam');
   const [sceneReady, setSceneReady] = useState(false);
   const [bootDone, setBootDone] = useState(false);
-  const handleSceneReady = useCallback(() => setSceneReady(true), []);
-  const handleBootDone   = useCallback(() => setBootDone(true), []);
+
+  const [screenRect, setScreenRect] = useState(null);
+
+  const handleSceneReady  = useCallback(() => setSceneReady(true), []);
+  const handleBootDone    = useCallback(() => setBootDone(true), []);
+  const handleZoomComplete = useCallback((rect) => {
+    setScreenRect(rect);
+    setCurrentCam('PanelZoomCam');
+  }, [setCurrentCam]);
+
+  // Buttons fade only when the camera is zoomed into the panel
+  const buttonsHidden = currentCam === 'PanelZoomCam';
+
+  // ESC steps back from the panel zoom
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape' && currentCam === 'PanelZoomCam') {
+        window.transitionToCamera?.('ScreenCam');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [currentCam]);
 
   const cameraLabels = {
     'DefaultCam': 'HSDX.AM',
     'ConsoleCam':  'GAMES',
     'OutdoorCam':  'MUSIC',
-    'PhoneCam':    'INFO',
   };
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative', background: '#000' }}>
 
       {!bootDone && (
-        <BootScreen
-          sceneReady={sceneReady}
-          onDone={handleBootDone}
-        />
+        <BootScreen sceneReady={sceneReady} onDone={handleBootDone} />
       )}
 
-      <div className="ui-overlay">
+      <div
+        className="ui-overlay"
+        style={{
+          opacity: buttonsHidden ? 0 : 1,
+          pointerEvents: buttonsHidden ? 'none' : 'auto',
+          transition: 'opacity 0.4s ease',
+        }}
+      >
         <div className="status-bar">HSDX_OS // USER_LOGIN</div>
         {['DefaultCam', ...camList.filter(n => n !== 'DefaultCam')]
           .filter(name => cameraLabels[name])
@@ -669,8 +878,11 @@ export default function App() {
               className="cam-button"
               onClick={() => {
                 if (name === 'ConsoleCam') {
-                  if (currentCam === 'ConsoleCam') window.transitionToCamera('ScreenCam');
-                  else window.transitionToCamera('ConsoleCam');
+                  if (currentCam === 'ConsoleCam') {
+                    window.transitionToCamera('ScreenCam');
+                  } else {
+                    window.transitionToCamera('ConsoleCam');
+                  }
                 } else {
                   window.transitionToCamera(name);
                 }
@@ -684,6 +896,16 @@ export default function App() {
             </button>
           ))}
       </div>
+
+      {currentCam === 'PanelZoomCam' && bootDone && (
+        <LargeConsoleOverlay
+          screenRect={screenRect}
+          onClose={() => {
+            setCurrentCam('ScreenCam');
+            window.transitionToCamera?.('ScreenCam');
+          }}
+        />
+      )}
 
       <Canvas
         dpr={0.65}
@@ -703,6 +925,7 @@ export default function App() {
             setCurrentCam={setCurrentCam}
             onReady={handleSceneReady}
             panelsVisible={bootDone}
+            onZoomComplete={handleZoomComplete}
           />
         </Suspense>
       </Canvas>
