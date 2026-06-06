@@ -590,10 +590,17 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
 
   useEffect(() => {
     if (!panelsVisible || !mainCamRef.current) return;
-    const cam = mainCamRef.current;
-    cam.position.x += 0.0001;
-    const raf = requestAnimationFrame(() => { cam.position.x -= 0.0001; });
-    return () => cancelAnimationFrame(raf);
+    const nudge = () => {
+      if (!mainCamRef.current) return;
+      mainCamRef.current.position.x += 0.001;
+      requestAnimationFrame(() => {
+        if (mainCamRef.current) mainCamRef.current.position.x -= 0.001;
+      });
+    };
+    nudge();
+    const t1 = setTimeout(nudge, 100);
+    const t2 = setTimeout(nudge, 300);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [panelsVisible]);
 
   useEffect(() => {
