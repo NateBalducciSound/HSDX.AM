@@ -755,7 +755,7 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
     }, 50);
   };
 
-  // Zoom camera into the screen mesh, then capture the sleep div's screen-space rect
+  // Zoom camera into the screen mesh, then read the sleep div's viewport rect
   const zoomToScreen = useCallback(() => {
     if (!screenTransform || !mainCamRef.current) return;
     const { pos, quat } = screenTransform;
@@ -774,12 +774,17 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
       duration: 1.2, ease: 'power2.inOut',
       onUpdate: () => mainCamRef.current.updateProjectionMatrix(),
       onComplete: () => {
-        // Wait one frame for drei to reposition the Html div, then read its rect
-        requestAnimationFrame(() => {
+        // Wait two frames: one for Three.js to render, one for drei to update Html transforms
+        requestAnimationFrame(() => requestAnimationFrame(() => {
           const el = document.getElementById('crt-sleep-screen');
-          const rect = el ? el.getBoundingClientRect() : null;
+          if (!el) { onZoomComplete(null); return; }
+          const r = el.getBoundingClientRect();
+          // Sanity-check: if rect is degenerate fall back to null (overlay uses centered fallback)
+          const rect = (r.width > 10 && r.height > 10)
+            ? { left: r.left, top: r.top, width: r.width, height: r.height }
+            : null;
           onZoomComplete(rect);
-        });
+        }));
       },
     });
   }, [screenTransform, onZoomComplete]);
