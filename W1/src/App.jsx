@@ -461,7 +461,7 @@ const SLEEP_W = 320;
 const SLEEP_H = 220;
 
 // Sleep-mode screen shown in the 3D world — black with a faint standby glow
-function ConsoleScreen({ transform }) {
+function ConsoleScreen({ transform, visible }) {
   const euler = new THREE.Euler().setFromQuaternion(transform.quat);
   const { pos } = transform;
 
@@ -488,6 +488,8 @@ function ConsoleScreen({ transform }) {
             justifyContent: 'flex-end',
             padding: '8px',
             boxSizing: 'border-box',
+            opacity: visible ? 1 : 0,
+            transition: 'opacity 0.3s ease',
           }}
         >
           <span className="standby-led" />
@@ -588,8 +590,9 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
   const [boomboxPos, setBoomboxPos] = useState(null);
   const [screenTransform, setScreenTransform] = useState(null);
 
+  // Nudge camera once screenTransform is known so drei Html gets positioned correctly
   useEffect(() => {
-    if (!panelsVisible || !mainCamRef.current) return;
+    if (!screenTransform || !mainCamRef.current) return;
     const nudge = () => {
       if (!mainCamRef.current) return;
       mainCamRef.current.position.x += 0.001;
@@ -598,10 +601,9 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
       });
     };
     nudge();
-    const t1 = setTimeout(nudge, 100);
-    const t2 = setTimeout(nudge, 300);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [panelsVisible]);
+    const t1 = setTimeout(nudge, 150);
+    return () => clearTimeout(t1);
+  }, [screenTransform]);
 
   useEffect(() => {
     gl.toneMapping = THREE.NoToneMapping;
@@ -819,7 +821,7 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
         <RadioAudio position={boomboxPos} url="/music.mp3" audioControlRef={audioControlRef} />
       )}
 
-      {screenTransform && panelsVisible && <ConsoleScreen transform={screenTransform} />}
+      {screenTransform && <ConsoleScreen transform={screenTransform} visible={panelsVisible} />}
 
       <EffectComposer>
         <Bloom luminanceThreshold={0.9} intensity={0.8} mipmapBlur />
