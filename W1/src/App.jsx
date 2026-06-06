@@ -1,5 +1,5 @@
 import React, { Suspense, useRef, useEffect, useState, useCallback } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { useGLTF, Html, PerspectiveCamera, Grid, PositionalAudio, Environment } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { gsap } from 'gsap';
@@ -464,9 +464,15 @@ const SLEEP_H = 220;
 function ConsoleScreen({ transform, visible }) {
   const euler = new THREE.Euler().setFromQuaternion(transform.quat);
   const { pos } = transform;
+  const groupRef = useRef();
+
+  // Force world-matrix update every frame so drei Html always has correct CSS transform
+  useFrame(() => {
+    if (groupRef.current) groupRef.current.updateMatrixWorld(true);
+  });
 
   return (
-    <mesh position={[pos.x, pos.y, pos.z]} rotation={[euler.x, euler.y, euler.z]}>
+    <group ref={groupRef} position={[pos.x, pos.y, pos.z]} rotation={[euler.x, euler.y, euler.z]}>
       <Html
         transform
         distanceFactor={3.53}
@@ -495,7 +501,7 @@ function ConsoleScreen({ transform, visible }) {
           <span className="standby-led" />
         </div>
       </Html>
-    </mesh>
+    </group>
   );
 }
 
