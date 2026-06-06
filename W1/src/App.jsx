@@ -470,7 +470,6 @@ function ConsoleScreen({ transform }) {
       <Html
         transform
         distanceFactor={3.53}
-        position={[0, 0, 0.05]}
         style={{ pointerEvents: 'none' }}
         zIndexRange={[100, 0]}
       >
@@ -480,10 +479,10 @@ function ConsoleScreen({ transform }) {
           style={{
             width: `${SLEEP_W}px`,
             height: `${SLEEP_H}px`,
-            background: '#000',
+            background: '#020d02',
             borderRadius: '6px',
-            border: '2px solid #061006',
-            boxShadow: '0 0 6px rgba(51,255,51,0.08), 0 0 18px rgba(51,255,51,0.04)',
+            border: '2px solid #1a4d1a',
+            boxShadow: '0 0 10px rgba(51,255,51,0.3), 0 0 30px rgba(51,255,51,0.1)',
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'flex-end',
