@@ -1,6 +1,6 @@
 import React, { Suspense, useRef, useEffect, useState, useCallback } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { useGLTF, Html, PerspectiveCamera, Grid, PositionalAudio, Environment } from '@react-three/drei';
+import { useGLTF, Html, PerspectiveCamera, PositionalAudio, Environment } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { gsap } from 'gsap';
 import * as THREE from 'three';
@@ -488,7 +488,6 @@ function ConsoleScreen({ transform, visible }) {
             background: '#020d02',
             borderRadius: '6px',
             border: '2px solid #1a4d1a',
-            boxShadow: '0 0 10px rgba(51,255,51,0.3), 0 0 30px rgba(51,255,51,0.1)',
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'flex-end',
@@ -586,7 +585,7 @@ function collectMeshes(obj) {
 }
 
 function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentCam, setCurrentCam, onReady, panelsVisible, onZoomComplete }) {
-  const { scene: gltfScene, cameras } = useGLTF('/scene.glb');
+  const { scene: gltfScene, cameras } = useGLTF('/scene2.glb');
   const { scene: r3fScene, gl } = useThree();
   const mainCamRef = useRef();
   const clearTimer = useRef(null);
@@ -669,6 +668,19 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
         obj.getWorldPosition(pos);
         obj.getWorldQuaternion(quat);
         setScreenTransform({ pos, quat });
+      }
+      if (obj.isMesh && obj.material) {
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+        mats.forEach(m => {
+          // Force all geometry to write depth — prevents see-through sorting bugs
+          m.depthWrite = true;
+          // Convert blend-transparent with alpha content to alphaTest cutout
+          if (m.transparent && (m.alphaMap || m.alphaTest > 0)) {
+            m.transparent = false;
+            m.alphaTest = Math.max(m.alphaTest || 0, 0.4);
+            m.side = THREE.DoubleSide;
+          }
+        });
       }
       if (obj.name === 'RadioTowerglb' || obj.name?.includes('Tower')) {
         obj.traverse(child => {
@@ -805,7 +817,7 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
 
   return (
     <>
-      <PerspectiveCamera makeDefault ref={mainCamRef} fov={75} far={1000} />
+      <PerspectiveCamera makeDefault ref={mainCamRef} fov={75} near={0.05} far={400} />
 
       <color attach="background" args={['#050505']} />
       <fogExp2 attach="fog" args={['#050505', 0.05]} />
@@ -821,7 +833,6 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
         onPointerOut={handlePointerOut}
       />
 
-      <Grid infiniteGrid fadeDistance={40} sectionColor="#333" cellColor="#111" />
 
       {boomboxPos && (
         <RadioAudio position={boomboxPos} url="/music.mp3" audioControlRef={audioControlRef} />
@@ -829,13 +840,19 @@ function SceneContent({ setAvailableCameras, hoveredCam, setHoveredCam, currentC
 
       {screenTransform && <ConsoleScreen transform={screenTransform} visible={panelsVisible} />}
 
+      {/* EffectComposer disabled — causes camera movement flashing
       <EffectComposer>
-        <Bloom luminanceThreshold={0.9} intensity={0.8} mipmapBlur />
+        <Bloom luminanceThreshold={0.9} intensity={0.8} />
         <Vignette eskil={false} offset={0.15} darkness={1.0} />
-      </EffectComposer>
+      </EffectComposer> */}
     </>
   );
 }
+
+/* --- flat/mobile fallback (commented out for now) ---
+function useDeviceMode() { ... }
+function FlatUI({ bootDone }) { ... }
+--- */
 
 export default function App() {
   const [camList, setCamList] = useState([]);
