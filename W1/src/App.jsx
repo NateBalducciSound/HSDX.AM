@@ -476,6 +476,7 @@ function ConsoleScreen({ transform, visible }) {
       <Html
         transform
         distanceFactor={3.53}
+        position={[0, 0, 0.2]}
         style={{ pointerEvents: 'none' }}
         zIndexRange={[100, 0]}
       >
