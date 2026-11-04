@@ -238,6 +238,7 @@ const C = {
     color: '#555',
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
+    whiteSpace: 'nowrap',
   },
   detailSection: {
     marginBottom: 24,
@@ -284,25 +285,31 @@ function ProjectEntry({ title, role, summary, link, skills, image, video, detail
       <hr style={C.divider} />
       <div style={C.header}>
         {/* Top row: text + optional image */}
-        <div style={{ ...C.topRow, flexDirection: mobile ? 'column' : 'row', alignItems: mobile ? 'center' : 'flex-start' }}>
+        <div style={{ ...C.topRow, flexDirection: mobile ? 'column' : 'row', alignItems: 'flex-start' }}>
 
-          {/* On mobile: image above text */}
+          {/* On mobile: image above text, centered */}
           {mobile && image && (
-            <div style={{ width: '60%', marginBottom: 20 }}>
+            <div style={{ width: '60%', marginBottom: 20, marginLeft: 'auto', marginRight: 'auto' }}>
               <img src={image} alt={title} style={C.image} />
             </div>
           )}
 
-          <div style={{ ...C.textCol, textAlign: mobile ? 'center' : 'left' }}>
+          <div style={C.textCol}>
             <div style={C.title}>{title}</div>
-            <div style={C.role}>{role}</div>
-            <p style={{ ...C.summary, textAlign: mobile ? 'center' : 'left' }}>{summary}</p>
+            <div style={{ ...C.role, display: 'flex', flexWrap: 'wrap', gap: '0 0' }}>
+              {role.split(' · ').map((term, i, arr) => (
+                <span key={i} style={{ whiteSpace: 'nowrap' }}>
+                  {term}{i < arr.length - 1 ? '\u00a0·\u00a0' : ''}
+                </span>
+              ))}
+            </div>
+            <p style={C.summary}>{summary}</p>
             {link && (
               <a
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ ...C.btn, margin: mobile ? '0 auto' : 0, display: mobile ? 'flex' : 'inline-flex', justifyContent: 'center' }}
+                style={C.btn}
                 onMouseEnter={e => { e.currentTarget.style.background = '#111'; e.currentTarget.style.color = '#f0ede8'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#111'; }}
               >
@@ -310,7 +317,7 @@ function ProjectEntry({ title, role, summary, link, skills, image, video, detail
               </a>
             )}
             {mobile && (details?.length || video) && (
-              <button style={{ ...C.expandBtn, marginTop: 14, justifyContent: 'center', width: '100%' }} onClick={() => setOpen(o => !o)}>
+              <button style={{ ...C.expandBtn, marginTop: 14, width: '100%' }} onClick={() => setOpen(o => !o)}>
                 {open ? 'less' : 'more details'}
                 <span style={C.chevron(open)}>▾</span>
               </button>
@@ -385,7 +392,7 @@ export default function GamesPage() {
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 48 }}>
           <img src="/HesDx.png" alt="Hes.dx" style={{ height: 40, imageRendering: 'auto' }} />
         </div>
-        <div style={{ ...C.pageTitle, textAlign: mobile ? 'center' : 'left' }}>Games</div>
+        <div style={C.pageTitle}>Games</div>
         {PROJECTS.map((p, i) => (
           <ProjectEntry
             key={p.title}
