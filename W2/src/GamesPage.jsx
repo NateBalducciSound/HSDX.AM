@@ -1,4 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+function useMobile() {
+  const [mobile, setMobile] = useState(window.innerWidth < 680);
+  useEffect(() => {
+    const fn = () => setMobile(window.innerWidth < 680);
+    window.addEventListener('resize', fn);
+    return () => window.removeEventListener('resize', fn);
+  }, []);
+  return mobile;
+}
 
 // ─── Games page ───────────────────────────────────────────────────────────────
 // To add a new project, copy the existing entry object in PROJECTS and fill in:
@@ -102,7 +112,7 @@ const C = {
   inner: {
     maxWidth: 700,
     margin: '0 auto',
-    padding: '40px 32px 80px',
+    padding: '40px 4% 80px',
   },
   pageTitle: {
     fontSize: '0.65rem',
@@ -131,8 +141,9 @@ const C = {
     minWidth: 0,
   },
   imageCol: {
-    flexShrink: 0,
-    width: 360,
+    flexShrink: 1,
+    width: '42%',
+    minWidth: 0,
   },
   image: {
     width: '100%',
@@ -265,7 +276,7 @@ function isYouTube(url) {
   return url && (url.includes('youtube.com/embed') || url.includes('youtu.be'));
 }
 
-function ProjectEntry({ title, role, summary, link, skills, image, video, details, isLast }) {
+function ProjectEntry({ title, role, summary, link, skills, image, video, details, isLast, mobile }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -273,26 +284,41 @@ function ProjectEntry({ title, role, summary, link, skills, image, video, detail
       <hr style={C.divider} />
       <div style={C.header}>
         {/* Top row: text + optional image */}
-        <div style={C.topRow}>
-          <div style={C.textCol}>
+        <div style={{ ...C.topRow, flexDirection: mobile ? 'column' : 'row', alignItems: mobile ? 'center' : 'flex-start' }}>
+
+          {/* On mobile: image above text */}
+          {mobile && image && (
+            <div style={{ width: '60%', marginBottom: 20 }}>
+              <img src={image} alt={title} style={C.image} />
+            </div>
+          )}
+
+          <div style={{ ...C.textCol, textAlign: mobile ? 'center' : 'left' }}>
             <div style={C.title}>{title}</div>
             <div style={C.role}>{role}</div>
-            <p style={C.summary}>{summary}</p>
+            <p style={{ ...C.summary, textAlign: mobile ? 'center' : 'left' }}>{summary}</p>
             {link && (
               <a
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={C.btn}
+                style={{ ...C.btn, margin: mobile ? '0 auto' : 0, display: mobile ? 'flex' : 'inline-flex', justifyContent: 'center' }}
                 onMouseEnter={e => { e.currentTarget.style.background = '#111'; e.currentTarget.style.color = '#f0ede8'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#111'; }}
               >
                 {link.label} ↗
               </a>
             )}
+            {mobile && (details?.length || video) && (
+              <button style={{ ...C.expandBtn, marginTop: 14, justifyContent: 'center', width: '100%' }} onClick={() => setOpen(o => !o)}>
+                {open ? 'less' : 'more details'}
+                <span style={C.chevron(open)}>▾</span>
+              </button>
+            )}
           </div>
 
-          {image && (
+          {/* On desktop: image beside text */}
+          {!mobile && image && (
             <div style={C.imageCol}>
               <img src={image} alt={title} style={C.image} />
               {(details?.length || video) && (
@@ -352,18 +378,20 @@ function ProjectEntry({ title, role, summary, link, skills, image, video, detail
 }
 
 export default function GamesPage() {
+  const mobile = useMobile();
   return (
     <div style={C.page}>
-      <div style={C.inner}>
+      <div style={{ ...C.inner, padding: mobile ? '32px 20px 80px' : C.inner.padding }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 48 }}>
           <img src="/HesDx.png" alt="Hes.dx" style={{ height: 40, imageRendering: 'auto' }} />
         </div>
-        <div style={C.pageTitle}>Games</div>
+        <div style={{ ...C.pageTitle, textAlign: mobile ? 'center' : 'left' }}>Games</div>
         {PROJECTS.map((p, i) => (
           <ProjectEntry
             key={p.title}
             {...p}
             isLast={i === PROJECTS.length - 1}
+            mobile={mobile}
           />
         ))}
       </div>
