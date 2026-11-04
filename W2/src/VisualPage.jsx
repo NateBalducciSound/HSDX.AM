@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react'; // useState/useEffect used by LazyIframe
 
 // ─── Visual page ──────────────────────────────────────────────────────────────
 // DESKTOP layout: absolute-positioned collage inside a tall container.
@@ -99,14 +99,6 @@ function LazyIframe({ src, aspect, title }) {
 }
 
 export default function VisualPage() {
-  const [mobile, setMobile] = useState(window.innerWidth < 700);
-
-  useEffect(() => {
-    const onResize = () => setMobile(window.innerWidth < 700);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundImage: 'url(/RoadPhoto.JPG)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', overflowY: 'auto', fontFamily: "'Space Mono', monospace" }}>
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 20px 120px' }}>
@@ -119,11 +111,17 @@ export default function VisualPage() {
           Visual
         </div>
 
-        {mobile ? (
-          // ── Mobile: simple vertical stack ──────────────────────────────────
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'flex-start' }}>
-            {COLLAGE_ITEMS.map((item, i) => (
-              <div key={i} style={{ width: item.m.width || '90%', marginLeft: item.m.marginLeft || 0 }}>
+        {/* Collage — % left positions compress naturally as viewport narrows */}
+        <div style={{ position: 'relative', height: 1600 }}>
+          {COLLAGE_ITEMS.map((item, i) => (
+            <div key={i} style={{
+              position: 'absolute',
+              left: item.d.left,
+              top: item.d.top,
+              width: item.d.width,
+              minWidth: 240,
+              zIndex: item.d.zIndex,
+            }}>
                 {item.type === 'p5' ? (
                   <LazyIframe src={item.src} aspect={item.aspect} title={item.title} />
                 ) : (
@@ -132,26 +130,6 @@ export default function VisualPage() {
               </div>
             ))}
           </div>
-        ) : (
-          // ── Desktop: scattered absolute collage ────────────────────────────
-          <div style={{ position: 'relative', height: 1600 }}>
-            {COLLAGE_ITEMS.map((item, i) => (
-              <div key={i} style={{
-                position: 'absolute',
-                left: item.d.left,
-                top: item.d.top,
-                width: item.d.width,
-                zIndex: item.d.zIndex,
-              }}>
-                {item.type === 'p5' ? (
-                  <LazyIframe src={item.src} aspect={item.aspect} title={item.title} />
-                ) : (
-                  <img src={item.src} alt={item.title} style={{ width: '100%', display: 'block', imageRendering: 'auto' }} />
-                )}
-              </div>
-            ))}
-          </div>
-        )}
 
       </div>
     </div>
