@@ -4,6 +4,7 @@ import NavButtons from './NavButtons';
 import Obelisks from './Obelisks';
 import GamesPage from './GamesPage';
 import VisualPage from './VisualPage';
+import InfoPage from './InfoPage';
 
 export default function App() {
   const [selected, setSelected] = useState(null);
@@ -24,7 +25,8 @@ export default function App() {
       {/* Section pages */}
       {selected === 0 && <GamesPage />}
       {selected === 2 && <VisualPage />}
-      {selected !== null && selected !== 0 && selected !== 2 && (
+      {selected === 3 && <InfoPage />}
+      {selected !== null && selected !== 0 && selected !== 2 && selected !== 3 && (
         <div style={{
           position: 'fixed', inset: 0,
           background: '#f0ede8',
