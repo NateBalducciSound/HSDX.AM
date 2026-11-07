@@ -65,7 +65,7 @@ const S = {
     minWidth: 0,
   },
   desc: {
-    fontSize: '0.78rem',
+    fontSize: 'clamp(0.6rem, 2vw, 0.78rem)',
     color: '#333',
     lineHeight: 1.5,
     marginBottom: 12,
